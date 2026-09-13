@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "Can Haritası",
+    "slug": "can-haritasi",
+    "scheme": "canharitasi",
+    "version": "1.2.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Can Haritası, yakın yardım çağrılarını göstermek ve senin oluşturduğun çağrının olay konumunu kaydetmek için konum izni kullanır."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Can Haritası, yardım çağrısına fotoğraf ekleyebilmen için fotoğraflarına erişir.",
+          "cameraPermission": "Can Haritası, yardım çağrısına fotoğraf çekebilmen için kamerayı kullanır."
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true
+        }
+      ],
+      "@maplibre/maplibre-react-native",
+      "expo-system-ui"
+    ],
+    "android": {
+      "package": "com.fiel.canharitasi",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#153F36"
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "CAMERA"
+      ],
+      "versionCode": 1
+    },
+    "ios": {
+      "bundleIdentifier": "com.fiel.canharitasi",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Yakındaki yardım çağrılarını göstermek ve oluşturduğun çağrının olay konumunu kaydetmek için konum kullanılır.",
+        "NSCameraUsageDescription": "Yardım çağrısına fotoğraf eklemek için kamera kullanılır.",
+        "NSPhotoLibraryUsageDescription": "Yardım çağrısına fotoğraf eklemek için fotoğraf kitaplığı kullanılır."
+      },
+      "buildNumber": "1"
+    },
+    "newArchEnabled": true,
+    "owner": "fiko93",
+    "backgroundColor": "#F7F5EF",
+    "icon": "./assets/icon.png",
+    "extra": {
+      "eas": {
+        "projectId": "59b19858-cb3c-425e-8466-6230c19b55c9"
+      }
+    }
+  }
+}
