@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -33,6 +33,7 @@ import {
   getMyProfile,
   markHelp,
   NearbyReport,
+  NEON_AUTH_URL,
   PRIVACY_URL,
   Profile,
   reportContent,
@@ -43,8 +44,8 @@ import {
 } from './src/backend';
 
 type Tab = 'home' | 'map' | 'report' | 'impact' | 'profile';
-type Need = 'Mama' | 'Su' | 'Veteriner' | 'GÃ¼venli alan';
-type AnimalType = 'Kedi' | 'KÃ¶pek' | 'DiÄŸer';
+type Need = 'Mama' | 'Su' | 'Veteriner' | 'Güvenli alan';
+type AnimalType = 'Kedi' | 'Köpek' | 'Diğer';
 type IconName = keyof typeof Ionicons.glyphMap & string;
 type Position = {
   latitude: number;
@@ -66,18 +67,18 @@ const needIcon: Record<Need, IconName> = {
   Mama: 'fast-food',
   Su: 'water',
   Veteriner: 'medical',
-  'GÃ¼venli alan': 'home',
+  'Güvenli alan': 'home',
 };
 
 const needColor: Record<Need, string> = {
   Mama: '#E3F1E8',
   Su: '#E2EEF8',
   Veteriner: '#FCE3DA',
-  'GÃ¼venli alan': '#EFE7F7',
+  'Güvenli alan': '#EFE7F7',
 };
 
 function humanDistance(meters: number) {
-  if (!Number.isFinite(meters)) return 'â€”';
+  if (!Number.isFinite(meters)) return '—';
   if (meters < 1000) return `${Math.max(1, Math.round(meters))} m`;
   return `${(meters / 1000).toFixed(meters < 10000 ? 1 : 0).replace('.', ',')} km`;
 }
@@ -85,16 +86,16 @@ function humanDistance(meters: number) {
 function relativeTime(value: string) {
   const diff = Date.now() - new Date(value).getTime();
   const minutes = Math.max(0, Math.round(diff / 60000));
-  if (minutes < 1) return 'ÅŸimdi';
-  if (minutes < 60) return `${minutes} dk Ã¶nce`;
+  if (minutes < 1) return 'şimdi';
+  if (minutes < 60) return `${minutes} dk önce`;
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours} sa Ã¶nce`;
-  return `${Math.round(hours / 24)} gÃ¼n Ã¶nce`;
+  if (hours < 24) return `${hours} sa önce`;
+  return `${Math.round(hours / 24)} gün önce`;
 }
 
 async function readCurrentPosition(): Promise<Position> {
   const permission = await Location.requestForegroundPermissionsAsync();
-  if (!permission.granted) throw new Error('YakÄ±ndaki Ã§aÄŸrÄ±larÄ± gÃ¶stermek iÃ§in konum izni gerekiyor.');
+  if (!permission.granted) throw new Error('Yakındaki çağrıları göstermek için konum izni gerekiyor.');
   const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
   let city: string | null = null;
   let district: string | null = null;
@@ -128,18 +129,18 @@ function AuthScreen() {
   const submit = async () => {
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail || password.length < 8 || (mode === 'register' && (!name.trim() || !accepted))) {
-      Alert.alert('Eksik bilgi', mode === 'register' ? 'Ad, geÃ§erli e-posta, en az 8 karakterlik ÅŸifre ve ÅŸartlar onayÄ± gerekiyor.' : 'GeÃ§erli e-posta ve en az 8 karakterlik ÅŸifre gir.');
+      Alert.alert('Eksik bilgi', mode === 'register' ? 'Ad, geçerli e-posta, en az 8 karakterlik şifre ve şartlar onayı gerekiyor.' : 'Geçerli e-posta ve en az 8 karakterlik şifre gir.');
       return;
     }
     setBusy(true);
     try {
       const result = mode === 'register'
-        ? await authClient.signUp.email({ email: normalizedEmail, password, name: name.trim(), callbackURL: 'https://ep-red-lake-ayk3kz85.neonauth.c-5.us-east-2.aws.neon.tech/canharitasi/auth' })
-        : await authClient.signIn.email({ email: normalizedEmail, password, callbackURL: 'https://ep-red-lake-ayk3kz85.neonauth.c-5.us-east-2.aws.neon.tech/canharitasi/auth' });
-      if (result.error) throw new Error(result.error.message || 'GiriÅŸ yapÄ±lamadÄ±.');
+        ? await authClient.signUp.email({ email: normalizedEmail, password, name: name.trim(), callbackURL: NEON_AUTH_URL })
+        : await authClient.signIn.email({ email: normalizedEmail, password, callbackURL: NEON_AUTH_URL });
+      if (result.error) throw new Error(result.error.message || 'Giriş yapılamadı.');
       if (mode === 'register') { try { await acceptTerms(TERMS_VERSION); } catch { /* AppInner will request acceptance again if persistence fails. */ } }
     } catch (error) {
-      Alert.alert('Oturum aÃ§Ä±lamadÄ±', error instanceof Error ? error.message : 'Bilinmeyen bir hata oluÅŸtu.');
+      Alert.alert('Oturum açılamadı', error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu.');
     } finally {
       setBusy(false);
     }
@@ -149,20 +150,20 @@ function AuthScreen() {
     <SafeAreaView style={styles.authSafe}>
       <View style={styles.authBrand}>
         <View style={styles.authLogo}><Ionicons name="paw" size={30} color="#fff" /></View>
-        <Text style={styles.authTitle}>Can HaritasÄ±<Text style={{ color: CORAL }}>.</Text></Text>
-        <Text style={styles.authSubtitle}>YakÄ±ndaki bir canÄ± gÃ¶rÃ¼nÃ¼r kÄ±l. YardÄ±mÄ± doÄŸru kiÅŸiye ulaÅŸtÄ±r.</Text>
+        <Text style={styles.authTitle}>Can Haritası<Text style={{ color: CORAL }}>.</Text></Text>
+        <Text style={styles.authSubtitle}>Yakındaki bir canı görünür kıl. Yardımı doğru kişiye ulaştır.</Text>
       </View>
       <View style={styles.authCard}>
         <View style={styles.authTabs}>
-          <Pressable onPress={() => setMode('login')} style={[styles.authTab, mode === 'login' && styles.authTabActive]}><Text style={[styles.authTabText, mode === 'login' && styles.authTabTextActive]}>GiriÅŸ</Text></Pressable>
-          <Pressable onPress={() => setMode('register')} style={[styles.authTab, mode === 'register' && styles.authTabActive]}><Text style={[styles.authTabText, mode === 'register' && styles.authTabTextActive]}>KayÄ±t ol</Text></Pressable>
+          <Pressable onPress={() => setMode('login')} style={[styles.authTab, mode === 'login' && styles.authTabActive]}><Text style={[styles.authTabText, mode === 'login' && styles.authTabTextActive]}>Giriş</Text></Pressable>
+          <Pressable onPress={() => setMode('register')} style={[styles.authTab, mode === 'register' && styles.authTabActive]}><Text style={[styles.authTabText, mode === 'register' && styles.authTabTextActive]}>Kayıt ol</Text></Pressable>
         </View>
-        {mode === 'register' && <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="AdÄ±n" placeholderTextColor="#8C9591" autoCapitalize="words" />}
+        {mode === 'register' && <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Adın" placeholderTextColor="#8C9591" autoCapitalize="words" />}
         <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="E-posta" placeholderTextColor="#8C9591" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
-        <TextInput style={styles.input} value={password} onChangeText={setPassword} placeholder="Åifre (en az 8 karakter)" placeholderTextColor="#8C9591" secureTextEntry autoCapitalize="none" />
-        {mode === 'register' && <View style={styles.termsBox}><Pressable onPress={() => setAccepted(v => !v)} style={styles.checkRow}><Ionicons name={accepted ? 'checkbox' : 'square-outline'} size={22} color={accepted ? GREEN : '#7B847F'} /><Text style={styles.checkText}>KullanÄ±m ÅartlarÄ± ve Topluluk KurallarÄ±'nÄ± kabul ediyorum.</Text></Pressable><View style={styles.legalLinks}><Pressable onPress={() => Linking.openURL(TERMS_URL)}><Text style={styles.legalLink}>ÅartlarÄ± oku</Text></Pressable><Text style={styles.legalDot}>â€¢</Text><Pressable onPress={() => Linking.openURL(PRIVACY_URL)}><Text style={styles.legalLink}>Gizlilik PolitikasÄ±</Text></Pressable></View></View>}
-        <Pressable disabled={busy} onPress={submit} style={[styles.authButton, busy && { opacity: .65 }]}>{busy ? <ActivityIndicator color="#fff" /> : <><Text style={styles.authButtonText}>{mode === 'login' ? 'GiriÅŸ yap' : 'HesabÄ±mÄ± oluÅŸtur'}</Text><Ionicons name="arrow-forward" size={18} color="#fff" /></>}</Pressable>
-        <View style={styles.privacyRow}><Ionicons name="shield-checkmark" size={17} color={GREEN} /><Text style={styles.privacyText}>CanlÄ± konumun yayÄ±nlanmaz. YalnÄ±zca oluÅŸturduÄŸun yardÄ±m Ã§aÄŸrÄ±sÄ±nÄ±n konumu kaydedilir.</Text></View>
+        <TextInput style={styles.input} value={password} onChangeText={setPassword} placeholder="Şifre (en az 8 karakter)" placeholderTextColor="#8C9591" secureTextEntry autoCapitalize="none" />
+        {mode === 'register' && <View style={styles.termsBox}><Pressable onPress={() => setAccepted(v => !v)} style={styles.checkRow}><Ionicons name={accepted ? 'checkbox' : 'square-outline'} size={22} color={accepted ? GREEN : '#7B847F'} /><Text style={styles.checkText}>Kullanım Şartları ve Topluluk Kuralları'nı kabul ediyorum.</Text></Pressable><View style={styles.legalLinks}><Pressable onPress={() => Linking.openURL(TERMS_URL)}><Text style={styles.legalLink}>Şartları oku</Text></Pressable><Text style={styles.legalDot}>•</Text><Pressable onPress={() => Linking.openURL(PRIVACY_URL)}><Text style={styles.legalLink}>Gizlilik Politikası</Text></Pressable></View></View>}
+        <Pressable disabled={busy} onPress={submit} style={[styles.authButton, busy && { opacity: .65 }]}>{busy ? <ActivityIndicator color="#fff" /> : <><Text style={styles.authButtonText}>{mode === 'login' ? 'Giriş yap' : 'Hesabımı oluştur'}</Text><Ionicons name="arrow-forward" size={18} color="#fff" /></>}</Pressable>
+        <View style={styles.privacyRow}><Ionicons name="shield-checkmark" size={17} color={GREEN} /><Text style={styles.privacyText}>Canlı konumun yayınlanmaz. Yalnızca oluşturduğun yardım çağrısının konumu kaydedilir.</Text></View>
       </View>
     </SafeAreaView>
   </KeyboardAvoidingView>;
@@ -174,7 +175,7 @@ function IconButton({ name, onPress }: { name: IconName; onPress?: () => void })
 
 function Header({ place, initial }: { place: string; initial: string }) {
   return <View style={styles.header}>
-    <View><Text style={styles.eyebrow}>{place.toLocaleUpperCase('tr-TR')}</Text><Text style={styles.logo}>Can HaritasÄ±<Text style={{ color: CORAL }}>.</Text></Text></View>
+    <View><Text style={styles.eyebrow}>{place.toLocaleUpperCase('tr-TR')}</Text><Text style={styles.logo}>Can Haritası<Text style={{ color: CORAL }}>.</Text></Text></View>
     <View style={styles.headerActions}><IconButton name="notifications-outline" /><View style={styles.avatar}><Text style={styles.avatarText}>{initial}</Text></View></View>
   </View>;
 }
@@ -187,7 +188,7 @@ function ReportCard({ report, onHelp, onModerated }: { report: NearbyReport; onH
   const [helped, setHelped] = useState(false);
   const [busy, setBusy] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const need = (['Mama', 'Su', 'Veteriner', 'GÃ¼venli alan'].includes(report.condition) ? report.condition : 'Veteriner') as Need;
+  const need = (['Mama', 'Su', 'Veteriner', 'Güvenli alan'].includes(report.condition) ? report.condition : 'Veteriner') as Need;
 
   useEffect(() => {
     let active = true;
@@ -207,9 +208,9 @@ function ReportCard({ report, onHelp, onModerated }: { report: NearbyReport; onH
     finally { setBusy(false); }
   };
 
-  const reportAbuse = () => Alert.alert('Ã‡aÄŸrÄ±yÄ± bildir', 'Bu Ã§aÄŸrÄ±nÄ±n Topluluk KurallarÄ±â€™na aykÄ±rÄ±, yanÄ±ltÄ±cÄ± veya uygunsuz olduÄŸunu dÃ¼ÅŸÃ¼nÃ¼yor musun?', [{ text: 'VazgeÃ§', style: 'cancel' }, { text: 'Bildir', style: 'destructive', onPress: async () => { try { await reportContent(report.id); Alert.alert('TeÅŸekkÃ¼rler', 'Bildirimin inceleme kuyruÄŸuna alÄ±ndÄ±.'); } catch (error) { Alert.alert('Bildirim gÃ¶nderilemedi', error instanceof Error ? error.message : 'Tekrar dene.'); } } }]);
+  const reportAbuse = () => Alert.alert('Çağrıyı bildir', 'Bu çağrının Topluluk Kuralları’na aykırı, yanıltıcı veya uygunsuz olduğunu düşünüyor musun?', [{ text: 'Vazgeç', style: 'cancel' }, { text: 'Bildir', style: 'destructive', onPress: async () => { try { await reportContent(report.id); Alert.alert('Teşekkürler', 'Bildirimin inceleme kuyruğuna alındı.'); } catch (error) { Alert.alert('Bildirim gönderilemedi', error instanceof Error ? error.message : 'Tekrar dene.'); } } }]);
 
-  const blockAuthor = () => Alert.alert('KullanÄ±cÄ±yÄ± engelle', 'Bu kullanÄ±cÄ±nÄ±n Ã§aÄŸrÄ±larÄ±nÄ± artÄ±k gÃ¶rmek istemediÄŸine emin misin?', [{ text: 'VazgeÃ§', style: 'cancel' }, { text: 'Engelle', style: 'destructive', onPress: async () => { try { await blockReportAuthor(report.id); await onModerated?.(); Alert.alert('Engellendi', 'Bu kullanÄ±cÄ±nÄ±n Ã§aÄŸrÄ±larÄ± artÄ±k listenden gizlenecek.'); } catch (error) { Alert.alert('Engellenemedi', error instanceof Error ? error.message : 'Tekrar dene.'); } } }]);
+  const blockAuthor = () => Alert.alert('Kullanıcıyı engelle', 'Bu kullanıcının çağrılarını artık görmek istemediğine emin misin?', [{ text: 'Vazgeç', style: 'cancel' }, { text: 'Engelle', style: 'destructive', onPress: async () => { try { await blockReportAuthor(report.id); await onModerated?.(); Alert.alert('Engellendi', 'Bu kullanıcının çağrıları artık listenden gizlenecek.'); } catch (error) { Alert.alert('Engellenemedi', error instanceof Error ? error.message : 'Tekrar dene.'); } } }]);
   return <View style={styles.caseCard}>
     <View style={[styles.caseImage, { backgroundColor: needColor[need] }]}>
       {imageUrl ? <Image source={{ uri: imageUrl }} style={styles.casePhoto} /> : <Ionicons name={needIcon[need]} size={34} color={GREEN} />}
@@ -217,41 +218,41 @@ function ReportCard({ report, onHelp, onModerated }: { report: NearbyReport; onH
     </View>
     <View style={styles.caseBody}>
       <View style={styles.caseTop}><Text style={styles.caseName}>{report.animal_type}</Text><Text style={styles.distance}>{humanDistance(report.distance_m)}</Text></View>
-      <Text numberOfLines={2} style={styles.caseType}>{report.title || report.description || report.condition} Â· <Text style={{ color: CORAL }}>{report.condition}</Text></Text>
+      <Text numberOfLines={2} style={styles.caseType}>{report.title || report.description || report.condition} · <Text style={{ color: CORAL }}>{report.condition}</Text></Text>
       <View style={styles.urgencyRow}>{Array.from({ length: 5 }).map((_, i) => <View key={i} style={[styles.urgencyDot, i < report.urgency && { backgroundColor: CORAL }]} />)}</View>
-      <View style={styles.moderationRow}><Pressable onPress={reportAbuse}><Text style={styles.moderationText}>Bildir</Text></Pressable><Text style={styles.moderationSep}>â€¢</Text><Pressable onPress={blockAuthor}><Text style={styles.moderationText}>Engelle</Text></Pressable></View>
-      <View style={styles.caseBottom}><Text style={styles.time}>{relativeTime(report.created_at)}</Text><Pressable onPress={help} style={[styles.miniButton, helped && styles.miniButtonDone]}>{busy ? <ActivityIndicator size="small" color="#fff" /> : <Text style={[styles.miniButtonText, helped && { color: GREEN }]}>{helped ? 'YoldayÄ±m âœ“' : 'Destek ol'}</Text>}</Pressable></View>
+      <View style={styles.moderationRow}><Pressable onPress={reportAbuse}><Text style={styles.moderationText}>Bildir</Text></Pressable><Text style={styles.moderationSep}>•</Text><Pressable onPress={blockAuthor}><Text style={styles.moderationText}>Engelle</Text></Pressable></View>
+      <View style={styles.caseBottom}><Text style={styles.time}>{relativeTime(report.created_at)}</Text><Pressable onPress={help} style={[styles.miniButton, helped && styles.miniButtonDone]}>{busy ? <ActivityIndicator size="small" color="#fff" /> : <Text style={[styles.miniButtonText, helped && { color: GREEN }]}>{helped ? 'Yoldayım ✓' : 'Destek ol'}</Text>}</Pressable></View>
     </View>
   </View>;
 }
 function EmptyNearby({ refresh, loading }: { refresh: () => void; loading: boolean }) {
-  return <View style={styles.emptyCard}><Ionicons name="paw-outline" size={34} color={GREEN} /><Text style={styles.emptyTitle}>YakÄ±nÄ±nda aÃ§Ä±k Ã§aÄŸrÄ± gÃ¶rÃ¼nmÃ¼yor</Text><Text style={styles.emptyText}>Konumunu yenileyebilir veya ihtiyaÃ§ gÃ¶ren ilk kiÅŸi sen olabilirsin.</Text><Pressable onPress={refresh} style={styles.outlineButton}>{loading ? <ActivityIndicator color={GREEN} /> : <Text style={styles.outlineButtonText}>Konumu yenile</Text>}</Pressable></View>;
+  return <View style={styles.emptyCard}><Ionicons name="paw-outline" size={34} color={GREEN} /><Text style={styles.emptyTitle}>Yakınında açık çağrı görünmüyor</Text><Text style={styles.emptyText}>Konumunu yenileyebilir veya ihtiyaç gören ilk kişi sen olabilirsin.</Text><Pressable onPress={refresh} style={styles.outlineButton}>{loading ? <ActivityIndicator color={GREEN} /> : <Text style={styles.outlineButtonText}>Konumu yenile</Text>}</Pressable></View>;
 }
 
 function Home({ reports, loading, position, refresh, goReport, userName, onHelp, onModerated }: {
   reports: NearbyReport[]; loading: boolean; position: Position | null; refresh: () => void; goReport: () => void; userName: string; onHelp: (id: string) => Promise<void>; onModerated: () => Promise<void>;
 }) {
-  const [filter, setFilter] = useState('YakÄ±nÄ±mda');
-  const filtered = useMemo(() => reports.filter(r => filter === 'YakÄ±nÄ±mda' || (filter === 'Acil' ? r.urgency >= 4 : r.condition === filter)), [reports, filter]);
-  const place = [position?.district, position?.city].filter(Boolean).join(' â€¢ ') || 'Konum bekleniyor';
+  const [filter, setFilter] = useState('Yakınımda');
+  const filtered = useMemo(() => reports.filter(r => filter === 'Yakınımda' || (filter === 'Acil' ? r.urgency >= 4 : r.condition === filter)), [reports, filter]);
+  const place = [position?.district, position?.city].filter(Boolean).join(' • ') || 'Konum bekleniyor';
   return <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
     <Header place={place} initial={(userName || 'C').slice(0, 1).toUpperCase()} />
     <LinearGradient colors={[GREEN, '#246356']} style={styles.hero}>
       <View style={styles.heroGlow} />
-      <View style={styles.live}><View style={styles.liveDot} /><Text style={styles.liveText}>GERÃ‡EK ZAMANLI Ã‡AÄRILAR</Text></View>
-      <Text style={styles.heroTitle}>{loading ? 'YakÄ±ndaki canlarÄ±\narÄ±yoruzâ€¦' : `${reports.length} canÄ±n sana\nyakÄ±nÄ±nda desteÄŸe ihtiyacÄ± var.`}</Text>
-      <Text style={styles.heroBody}>Konum yalnÄ±zca yakÄ±n Ã§aÄŸrÄ±larÄ± bulmak iÃ§in kullanÄ±lÄ±r. YardÄ±m Ã§aÄŸrÄ±sÄ± oluÅŸturmadÄ±kÃ§a paylaÅŸÄ±lmaz.</Text>
-      <Pressable style={styles.heroButton} onPress={goReport}><Text style={styles.heroButtonText}>YardÄ±m Ã§aÄŸrÄ±sÄ± oluÅŸtur</Text><Ionicons name="arrow-forward" size={18} color={GREEN} /></Pressable>
+      <View style={styles.live}><View style={styles.liveDot} /><Text style={styles.liveText}>GERÇEK ZAMANLI ÇAĞRILAR</Text></View>
+      <Text style={styles.heroTitle}>{loading ? 'Yakındaki canları\narıyoruz…' : `${reports.length} canın sana\nyakınında desteğe ihtiyacı var.`}</Text>
+      <Text style={styles.heroBody}>Konum yalnızca yakın çağrıları bulmak için kullanılır. Yardım çağrısı oluşturmadıkça paylaşılmaz.</Text>
+      <Pressable style={styles.heroButton} onPress={goReport}><Text style={styles.heroButtonText}>Yardım çağrısı oluştur</Text><Ionicons name="arrow-forward" size={18} color={GREEN} /></Pressable>
     </LinearGradient>
     <View style={styles.statsRow}>
-      <View style={styles.stat}><Text style={styles.statValue}>{reports.length}</Text><Text style={styles.statLabel}>YakÄ±ndaki aÃ§Ä±k Ã§aÄŸrÄ±</Text></View><View style={styles.statDivider} />
-      <View style={styles.stat}><Text style={styles.statValue}>{reports.filter(r => r.urgency >= 4).length}</Text><Text style={styles.statLabel}>YÃ¼ksek Ã¶ncelik</Text></View><View style={styles.statDivider} />
+      <View style={styles.stat}><Text style={styles.statValue}>{reports.length}</Text><Text style={styles.statLabel}>Yakındaki açık çağrı</Text></View><View style={styles.statDivider} />
+      <View style={styles.stat}><Text style={styles.statValue}>{reports.filter(r => r.urgency >= 4).length}</Text><Text style={styles.statLabel}>Yüksek öncelik</Text></View><View style={styles.statDivider} />
       <Pressable style={styles.stat} onPress={refresh}><Ionicons name="locate" size={20} color={GREEN} /><Text style={styles.statLabel}>Konumu yenile</Text></Pressable>
     </View>
-    <View style={styles.sectionHead}><View><Text style={styles.sectionTitle}>YakÄ±ndaki Ã§aÄŸrÄ±lar</Text><Text style={styles.sectionSub}>GerÃ§ek veritabanÄ±ndan, mesafeye gÃ¶re</Text></View></View>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>{['YakÄ±nÄ±mda', 'Acil', 'Mama', 'Veteriner'].map(x => <Pill key={x} text={x} active={filter === x} onPress={() => setFilter(x)} />)}</ScrollView>
+    <View style={styles.sectionHead}><View><Text style={styles.sectionTitle}>Yakındaki çağrılar</Text><Text style={styles.sectionSub}>Gerçek veritabanından, mesafeye göre</Text></View></View>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>{['Yakınımda', 'Acil', 'Mama', 'Veteriner'].map(x => <Pill key={x} text={x} active={filter === x} onPress={() => setFilter(x)} />)}</ScrollView>
     {loading && reports.length === 0 ? <ActivityIndicator style={{ marginVertical: 40 }} color={GREEN} /> : filtered.length ? filtered.map(r => <ReportCard key={r.id} report={r} onHelp={onHelp} onModerated={onModerated} />) : <EmptyNearby refresh={refresh} loading={loading} />}
-    <View style={styles.trustCard}><View style={styles.trustIcon}><Ionicons name="shield-checkmark" size={24} color={GREEN} /></View><View style={{ flex: 1 }}><Text style={styles.trustTitle}>Gizlilik Ã¶nce gelir</Text><Text style={styles.trustText}>KiÅŸisel canlÄ± konum yayÄ±nlanmaz; kayÄ±tlar kullanÄ±cÄ± oturumu ve veritabanÄ± eriÅŸim kurallarÄ±yla korunur.</Text></View></View>
+    <View style={styles.trustCard}><View style={styles.trustIcon}><Ionicons name="shield-checkmark" size={24} color={GREEN} /></View><View style={{ flex: 1 }}><Text style={styles.trustTitle}>Gizlilik önce gelir</Text><Text style={styles.trustText}>Kişisel canlı konum yayınlanmaz; kayıtlar kullanıcı oturumu ve veritabanı erişim kurallarıyla korunur.</Text></View></View>
   </ScrollView>;
 }
 
@@ -279,14 +280,14 @@ function MapScreen({ reports, position, onHelp, onModerated }: { reports: Nearby
           </Marker>;
         })}
       </MapLibreMap>
-      {!position && reports.length === 0 && <View style={styles.mapLoadingOverlay}><ActivityIndicator color={GREEN} /><Text style={styles.mapLoadingText}>Konum ve Ã§aÄŸrÄ±lar yÃ¼kleniyorâ€¦</Text></View>}
+      {!position && reports.length === 0 && <View style={styles.mapLoadingOverlay}><ActivityIndicator color={GREEN} /><Text style={styles.mapLoadingText}>Konum ve çağrılar yükleniyor…</Text></View>}
     </View>
-    <View style={styles.mapSheet}><View style={styles.handle} /><Text style={styles.mapCount}>YakÄ±nÄ±nda {reports.length} aktif Ã§aÄŸrÄ±</Text>{active ? <ReportCard report={active} onHelp={onHelp} onModerated={onModerated} /> : <Text style={styles.emptyText}>HenÃ¼z gÃ¶sterilecek Ã§aÄŸrÄ± yok.</Text>}</View>
+    <View style={styles.mapSheet}><View style={styles.handle} /><Text style={styles.mapCount}>Yakınında {reports.length} aktif çağrı</Text>{active ? <ReportCard report={active} onHelp={onHelp} onModerated={onModerated} /> : <Text style={styles.emptyText}>Henüz gösterilecek çağrı yok.</Text>}</View>
   </View>;
 }
 function ReportScreen({ defaultPosition, onPublished }: { defaultPosition: Position | null; onPublished: () => Promise<void> }) {
-  const needs: Need[] = ['Mama', 'Su', 'Veteriner', 'GÃ¼venli alan'];
-  const animals: AnimalType[] = ['Kedi', 'KÃ¶pek', 'DiÄŸer'];
+  const needs: Need[] = ['Mama', 'Su', 'Veteriner', 'Güvenli alan'];
+  const animals: AnimalType[] = ['Kedi', 'Köpek', 'Diğer'];
   const [step, setStep] = useState(1);
   const [need, setNeed] = useState<Need>('Veteriner');
   const [animalType, setAnimalType] = useState<AnimalType>('Kedi');
@@ -298,7 +299,7 @@ function ReportScreen({ defaultPosition, onPublished }: { defaultPosition: Posit
 
   const chooseLocation = async () => {
     try { setBusy(true); setPosition(await readCurrentPosition()); }
-    catch (error) { Alert.alert('Konum alÄ±namadÄ±', error instanceof Error ? error.message : 'Tekrar dene.'); }
+    catch (error) { Alert.alert('Konum alınamadı', error instanceof Error ? error.message : 'Tekrar dene.'); }
     finally { setBusy(false); }
   };
 
@@ -306,10 +307,10 @@ function ReportScreen({ defaultPosition, onPublished }: { defaultPosition: Posit
     try {
       if (camera) {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
-        if (!permission.granted) throw new Error('FotoÄŸraf Ã§ekmek iÃ§in kamera izni gerekiyor.');
+        if (!permission.granted) throw new Error('Fotoğraf çekmek için kamera izni gerekiyor.');
       } else {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (!permission.granted) throw new Error('FotoÄŸraf seÃ§mek iÃ§in galeri izni gerekiyor.');
+        if (!permission.granted) throw new Error('Fotoğraf seçmek için galeri izni gerekiyor.');
       }
       const result = camera
         ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: .75, allowsEditing: false })
@@ -318,44 +319,44 @@ function ReportScreen({ defaultPosition, onPublished }: { defaultPosition: Posit
         const a = result.assets[0];
         setPhoto({ uri: a.uri, mimeType: a.mimeType || null, width: a.width || null, height: a.height || null });
       }
-    } catch (error) { Alert.alert('FotoÄŸraf eklenemedi', error instanceof Error ? error.message : 'Tekrar dene.'); }
+    } catch (error) { Alert.alert('Fotoğraf eklenemedi', error instanceof Error ? error.message : 'Tekrar dene.'); }
   };
 
   const publish = async () => {
-    if (!position) { Alert.alert('Konum gerekli', 'Ã‡aÄŸrÄ±yÄ± yayÄ±nlamadan Ã¶nce olay konumunu al.'); setStep(2); return; }
-    if (!note.trim()) { Alert.alert('KÄ±sa not gerekli', 'HayvanÄ±n durumunu en az birkaÃ§ kelimeyle anlat.'); setStep(1); return; }
+    if (!position) { Alert.alert('Konum gerekli', 'Çağrıyı yayınlamadan önce olay konumunu al.'); setStep(2); return; }
+    if (!note.trim()) { Alert.alert('Kısa not gerekli', 'Hayvanın durumunu en az birkaç kelimeyle anlat.'); setStep(1); return; }
     setBusy(true);
     try {
       const report = await createAnimalReport({ animalType, need, note: note.trim(), latitude: position.latitude, longitude: position.longitude, accuracyM: position.accuracy, city: position.city, district: position.district });
       if (photo) {
         try { await uploadReportImage({ reportId: report.id, ...photo }); }
-        catch (error) { Alert.alert('Ã‡aÄŸrÄ± yayÄ±nlandÄ±, fotoÄŸraf bekliyor', error instanceof Error ? error.message : 'FotoÄŸraf daha sonra tekrar yÃ¼klenebilir.'); }
+        catch (error) { Alert.alert('Çağrı yayınlandı, fotoğraf bekliyor', error instanceof Error ? error.message : 'Fotoğraf daha sonra tekrar yüklenebilir.'); }
       }
       setSent(true);
       await onPublished();
     } catch (error) {
-      Alert.alert('Ã‡aÄŸrÄ± yayÄ±nlanamadÄ±', error instanceof Error ? error.message : 'Tekrar dene.');
+      Alert.alert('Çağrı yayınlanamadı', error instanceof Error ? error.message : 'Tekrar dene.');
     } finally { setBusy(false); }
   };
 
-  if (sent) return <View style={styles.successWrap}><View style={styles.successCircle}><Ionicons name="checkmark" size={48} color="#fff" /></View><Text style={styles.successTitle}>Ã‡aÄŸrÄ± yayÄ±nlandÄ±</Text><Text style={styles.successText}>KayÄ±t gerÃ§ek Can HaritasÄ± veritabanÄ±na iÅŸlendi ve yakÄ±nlÄ±k sorgularÄ±nda gÃ¶rÃ¼nmeye hazÄ±r.</Text><Pressable style={styles.primaryButton} onPress={() => { setSent(false); setStep(1); setNote(''); setPhoto(null); }}><Text style={styles.primaryButtonText}>Yeni Ã§aÄŸrÄ± oluÅŸtur</Text></Pressable></View>;
+  if (sent) return <View style={styles.successWrap}><View style={styles.successCircle}><Ionicons name="checkmark" size={48} color="#fff" /></View><Text style={styles.successTitle}>Çağrı yayınlandı</Text><Text style={styles.successText}>Kayıt gerçek Can Haritası veritabanına işlendi ve yakınlık sorgularında görünmeye hazır.</Text><Pressable style={styles.primaryButton} onPress={() => { setSent(false); setStep(1); setNote(''); setPhoto(null); }}><Text style={styles.primaryButtonText}>Yeni çağrı oluştur</Text></Pressable></View>;
 
   return <ScrollView contentContainerStyle={styles.formScroll} keyboardShouldPersistTaps="handled">
-    <View style={styles.formHeader}><Text style={styles.formTitle}>Bir can iÃ§in{`\n`}yardÄ±m iste.</Text><Text style={styles.formSub}>Bilgiler gerÃ§ek veritabanÄ±na kaydedilecek.</Text></View>
+    <View style={styles.formHeader}><Text style={styles.formTitle}>Bir can için{`\n`}yardım iste.</Text><Text style={styles.formSub}>Bilgiler gerçek veritabanına kaydedilecek.</Text></View>
     <View style={styles.steps}>{[1, 2, 3].map(s => <View key={s} style={[styles.step, s <= step && styles.stepActive]} />)}</View>
     {step === 1 && <>
-      <Text style={styles.fieldLabel}>HANGÄ° CAN?</Text><View style={styles.chipRow}>{animals.map(a => <Pill key={a} text={a} active={animalType === a} onPress={() => setAnimalType(a)} />)}</View>
-      <Text style={styles.fieldLabel}>NEYE Ä°HTÄ°YACI VAR?</Text><View style={styles.needGrid}>{needs.map(n => <Pressable key={n} onPress={() => setNeed(n)} style={[styles.needCard, need === n && styles.needCardActive]}><Ionicons name={needIcon[n]} size={27} color={need === n ? '#fff' : GREEN} /><Text style={[styles.needText, need === n && { color: '#fff' }]}>{n}</Text></Pressable>)}</View>
-      <Text style={styles.fieldLabel}>KISA BÄ°R NOT</Text><TextInput value={note} onChangeText={setNote} multiline maxLength={2000} placeholder="Ã–rn. Arka patisine basamÄ±yor, sakin gÃ¶rÃ¼nÃ¼yor..." placeholderTextColor="#8D948F" style={styles.textarea} />
+      <Text style={styles.fieldLabel}>HANGİ CAN?</Text><View style={styles.chipRow}>{animals.map(a => <Pill key={a} text={a} active={animalType === a} onPress={() => setAnimalType(a)} />)}</View>
+      <Text style={styles.fieldLabel}>NEYE İHTİYACI VAR?</Text><View style={styles.needGrid}>{needs.map(n => <Pressable key={n} onPress={() => setNeed(n)} style={[styles.needCard, need === n && styles.needCardActive]}><Ionicons name={needIcon[n]} size={27} color={need === n ? '#fff' : GREEN} /><Text style={[styles.needText, need === n && { color: '#fff' }]}>{n}</Text></Pressable>)}</View>
+      <Text style={styles.fieldLabel}>KISA BİR NOT</Text><TextInput value={note} onChangeText={setNote} multiline maxLength={2000} placeholder="Örn. Arka patisine basamıyor, sakin görünüyor..." placeholderTextColor="#8D948F" style={styles.textarea} />
     </>}
     {step === 2 && <>
-      <Text style={styles.fieldLabel}>OLAY KONUMU</Text><Pressable onPress={chooseLocation} style={styles.locationCard}><View style={styles.locationMap}>{busy ? <ActivityIndicator color={CORAL} /> : <Ionicons name="location" size={34} color={CORAL} />}</View><View style={{ flex: 1 }}><Text style={styles.locationTitle}>{position ? 'Konum hazÄ±r' : 'Konumu al'}</Text><Text style={styles.locationSub}>{position ? ([position.district, position.city].filter(Boolean).join(', ') || `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`) : 'Telefonun mevcut konumunu olay noktasÄ± olarak kullan'}</Text></View><Ionicons name="locate" size={22} color={GREEN} /></Pressable>
-      <Text style={styles.fieldLabel}>FOTOÄRAF</Text>{photo ? <View style={styles.photoPreviewWrap}><Image source={{ uri: photo.uri }} style={styles.photoPreview} /><Pressable onPress={() => setPhoto(null)} style={styles.removePhoto}><Ionicons name="close" size={20} color="#fff" /></Pressable></View> : <View style={styles.photoActions}><Pressable onPress={() => pickPhoto(true)} style={styles.photoAction}><Ionicons name="camera" size={26} color={GREEN} /><Text style={styles.photoTitle}>FotoÄŸraf Ã§ek</Text></Pressable><Pressable onPress={() => pickPhoto(false)} style={styles.photoAction}><Ionicons name="images" size={26} color={GREEN} /><Text style={styles.photoTitle}>Galeriden seÃ§</Text></Pressable></View>}
-      <Text style={styles.photoSub}>FotoÄŸraf private depoya yÃ¼klenir; genel bir dosya adresi olarak yayÄ±nlanmaz.</Text>
+      <Text style={styles.fieldLabel}>OLAY KONUMU</Text><Pressable onPress={chooseLocation} style={styles.locationCard}><View style={styles.locationMap}>{busy ? <ActivityIndicator color={CORAL} /> : <Ionicons name="location" size={34} color={CORAL} />}</View><View style={{ flex: 1 }}><Text style={styles.locationTitle}>{position ? 'Konum hazır' : 'Konumu al'}</Text><Text style={styles.locationSub}>{position ? ([position.district, position.city].filter(Boolean).join(', ') || `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`) : 'Telefonun mevcut konumunu olay noktası olarak kullan'}</Text></View><Ionicons name="locate" size={22} color={GREEN} /></Pressable>
+      <Text style={styles.fieldLabel}>FOTOĞRAF</Text>{photo ? <View style={styles.photoPreviewWrap}><Image source={{ uri: photo.uri }} style={styles.photoPreview} /><Pressable onPress={() => setPhoto(null)} style={styles.removePhoto}><Ionicons name="close" size={20} color="#fff" /></Pressable></View> : <View style={styles.photoActions}><Pressable onPress={() => pickPhoto(true)} style={styles.photoAction}><Ionicons name="camera" size={26} color={GREEN} /><Text style={styles.photoTitle}>Fotoğraf çek</Text></Pressable><Pressable onPress={() => pickPhoto(false)} style={styles.photoAction}><Ionicons name="images" size={26} color={GREEN} /><Text style={styles.photoTitle}>Galeriden seç</Text></Pressable></View>}
+      <Text style={styles.photoSub}>Fotoğraf private depoya yüklenir; genel bir dosya adresi olarak yayınlanmaz.</Text>
     </>}
-    {step === 3 && <View style={styles.reviewCard}><Text style={styles.reviewTitle}>Ã‡aÄŸrÄ±yÄ± kontrol et</Text><InfoRow icon="paw" label="Can" value={animalType} /><InfoRow icon={needIcon[need]} label="Ä°htiyaÃ§" value={need} /><InfoRow icon="location" label="Konum" value={position ? ([position.district, position.city].filter(Boolean).join(', ') || 'Koordinat alÄ±ndÄ±') : 'Eksik'} /><InfoRow icon="camera" label="FotoÄŸraf" value={photo ? 'Eklendi' : 'Eklenmedi'} /><View style={styles.safetyNote}><Ionicons name="shield-checkmark" size={20} color={GREEN} /><Text style={styles.safetyNoteText}>KiÅŸisel canlÄ± konumun deÄŸil, yalnÄ±zca bu Ã§aÄŸrÄ± iÃ§in seÃ§tiÄŸin olay konumu kaydedilir. YayÄ±nlayarak iÃ§eriÄŸin doÄŸru olduÄŸunu ve Topluluk KurallarÄ±'na uygun olduÄŸunu onaylarsÄ±n.</Text></View></View>}
-    {step < 3 ? <Pressable style={styles.primaryButton} onPress={() => { if (step === 1 && !note.trim()) return Alert.alert('KÄ±sa not gerekli', 'Durumu birkaÃ§ kelimeyle anlat.'); setStep(step + 1); }}><Text style={styles.primaryButtonText}>Devam et</Text><Ionicons name="arrow-forward" size={18} color="#fff" /></Pressable> : <Pressable disabled={busy} style={[styles.primaryButton, busy && { opacity: .6 }]} onPress={publish}>{busy ? <ActivityIndicator color="#fff" /> : <><Text style={styles.primaryButtonText}>Ã‡aÄŸrÄ±yÄ± yayÄ±nla</Text><Ionicons name="paper-plane" size={18} color="#fff" /></>}</Pressable>}
-    {step > 1 && !busy && <Pressable onPress={() => setStep(step - 1)}><Text style={styles.backText}>Geri dÃ¶n</Text></Pressable>}
+    {step === 3 && <View style={styles.reviewCard}><Text style={styles.reviewTitle}>Çağrıyı kontrol et</Text><InfoRow icon="paw" label="Can" value={animalType} /><InfoRow icon={needIcon[need]} label="İhtiyaç" value={need} /><InfoRow icon="location" label="Konum" value={position ? ([position.district, position.city].filter(Boolean).join(', ') || 'Koordinat alındı') : 'Eksik'} /><InfoRow icon="camera" label="Fotoğraf" value={photo ? 'Eklendi' : 'Eklenmedi'} /><View style={styles.safetyNote}><Ionicons name="shield-checkmark" size={20} color={GREEN} /><Text style={styles.safetyNoteText}>Kişisel canlı konumun değil, yalnızca bu çağrı için seçtiğin olay konumu kaydedilir. Yayınlayarak içeriğin doğru olduğunu ve Topluluk Kuralları'na uygun olduğunu onaylarsın.</Text></View></View>}
+    {step < 3 ? <Pressable style={styles.primaryButton} onPress={() => { if (step === 1 && !note.trim()) return Alert.alert('Kısa not gerekli', 'Durumu birkaç kelimeyle anlat.'); setStep(step + 1); }}><Text style={styles.primaryButtonText}>Devam et</Text><Ionicons name="arrow-forward" size={18} color="#fff" /></Pressable> : <Pressable disabled={busy} style={[styles.primaryButton, busy && { opacity: .6 }]} onPress={publish}>{busy ? <ActivityIndicator color="#fff" /> : <><Text style={styles.primaryButtonText}>Çağrıyı yayınla</Text><Ionicons name="paper-plane" size={18} color="#fff" /></>}</Pressable>}
+    {step > 1 && !busy && <Pressable onPress={() => setStep(step - 1)}><Text style={styles.backText}>Geri dön</Text></Pressable>}
   </ScrollView>;
 }
 
@@ -364,36 +365,36 @@ function InfoRow({ icon, label, value }: { icon: IconName; label: string; value:
 }
 
 function Impact({ reports }: { reports: NearbyReport[] }) {
-  return <ScrollView contentContainerStyle={styles.scroll}><Text style={styles.pageTitle}>Etkin</Text><Text style={styles.pageSub}>Topluluk etkisini gerÃ§ek veriler bÃ¼yÃ¼dÃ¼kÃ§e burada gÃ¶stereceÄŸiz.</Text><LinearGradient colors={[CORAL, '#E98B68']} style={styles.impactHero}><Text style={styles.impactEyebrow}>ÅU AN GÃ–REBÄ°LDÄ°ÄÄ°N</Text><Text style={styles.impactNumber}>{reports.length}</Text><Text style={styles.impactLabel}>yakÄ±n aktif Ã§aÄŸrÄ±</Text><View style={styles.impactLine} /><Text style={styles.impactQuote}>â€œKÃ¼Ã§Ã¼k bir yardÄ±m, bir can iÃ§in bÃ¼tÃ¼n gÃ¼n demek olabilir.â€</Text></LinearGradient><View style={styles.trustCard}><Ionicons name="server" size={26} color={GREEN} /><View style={{ flex: 1 }}><Text style={styles.trustTitle}>Demo sayaÃ§larÄ± kaldÄ±rÄ±ldÄ±</Text><Text style={styles.trustText}>Bu ekran artÄ±k uydurma baÅŸarÄ± rakamlarÄ± gÃ¶stermiyor. Ä°statistikler gerÃ§ek kayÄ±tlar oluÅŸtukÃ§a Ã¼retilecek.</Text></View></View></ScrollView>;
+  return <ScrollView contentContainerStyle={styles.scroll}><Text style={styles.pageTitle}>Etkin</Text><Text style={styles.pageSub}>Topluluk etkisini gerçek veriler büyüdükçe burada göstereceğiz.</Text><LinearGradient colors={[CORAL, '#E98B68']} style={styles.impactHero}><Text style={styles.impactEyebrow}>ŞU AN GÖREBİLDİĞİN</Text><Text style={styles.impactNumber}>{reports.length}</Text><Text style={styles.impactLabel}>yakın aktif çağrı</Text><View style={styles.impactLine} /><Text style={styles.impactQuote}>“Küçük bir yardım, bir can için bütün gün demek olabilir.”</Text></LinearGradient><View style={styles.trustCard}><Ionicons name="server" size={26} color={GREEN} /><View style={{ flex: 1 }}><Text style={styles.trustTitle}>Demo sayaçları kaldırıldı</Text><Text style={styles.trustText}>Bu ekran artık uydurma başarı rakamları göstermiyor. İstatistikler gerçek kayıtlar oluştukça üretilecek.</Text></View></View></ScrollView>;
 }
 
 function ProfileScreen({ user, reportCount }: { user: { name?: string | null; email?: string | null }; reportCount: number }) {
   const [deleting, setDeleting] = useState(false);
-  const logout = async () => { try { await authClient.signOut(); } catch (error) { Alert.alert('Ã‡Ä±kÄ±ÅŸ yapÄ±lamadÄ±', error instanceof Error ? error.message : 'Tekrar dene.'); } };
-  const name = user.name || 'Can HaritasÄ± gÃ¶nÃ¼llÃ¼sÃ¼';
-  const open = (url: string) => Linking.openURL(url).catch(() => Alert.alert('BaÄŸlantÄ± aÃ§Ä±lamadÄ±', 'Daha sonra tekrar dene.'));
-  const requestDeletion = () => Alert.alert('HesabÄ±mÄ± ve verilerimi sil', 'HesabÄ±n, profilin, oluÅŸturduÄŸun Ã§aÄŸrÄ±lar ve hesaba baÄŸlÄ± veriler iÃ§in silme talebi oluÅŸturulacak. Bu iÅŸlem geri alÄ±namaz.', [
-    { text: 'VazgeÃ§', style: 'cancel' },
-    { text: 'Silme talebi oluÅŸtur', style: 'destructive', onPress: async () => {
+  const logout = async () => { try { await authClient.signOut(); } catch (error) { Alert.alert('Çıkış yapılamadı', error instanceof Error ? error.message : 'Tekrar dene.'); } };
+  const name = user.name || 'Can Haritası gönüllüsü';
+  const open = (url: string) => Linking.openURL(url).catch(() => Alert.alert('Bağlantı açılamadı', 'Daha sonra tekrar dene.'));
+  const requestDeletion = () => Alert.alert('Hesabımı ve verilerimi sil', 'Hesabın, profilin, oluşturduğun çağrılar ve hesaba bağlı veriler için silme talebi oluşturulacak. Bu işlem geri alınamaz.', [
+    { text: 'Vazgeç', style: 'cancel' },
+    { text: 'Silme talebi oluştur', style: 'destructive', onPress: async () => {
       setDeleting(true);
       try {
         await requestMyAccountDeletion();
-        Alert.alert('Talebin alÄ±ndÄ±', 'Hesap silme talebin kaydedildi. Talebin en geÃ§ 30 gÃ¼n iÃ§inde iÅŸlenecek.', [{ text: 'Tamam', onPress: logout }]);
+        Alert.alert('Talebin alındı', 'Hesap silme talebin kaydedildi. Talebin en geç 30 gün içinde işlenecek.', [{ text: 'Tamam', onPress: logout }]);
       } catch (error) {
-        Alert.alert('Talep oluÅŸturulamadÄ±', error instanceof Error ? error.message : 'Tekrar dene.');
+        Alert.alert('Talep oluşturulamadı', error instanceof Error ? error.message : 'Tekrar dene.');
       } finally { setDeleting(false); }
     } },
   ]);
   return <ScrollView contentContainerStyle={styles.scroll}>
-    <View style={styles.profileTop}><View style={styles.bigAvatar}><Text style={styles.bigAvatarText}>{name.slice(0, 1).toUpperCase()}</Text></View><Text style={styles.profileName}>{name}</Text><Text style={styles.profileEmail}>{user.email}</Text><View style={styles.verifiedRow}><Ionicons name="shield-checkmark" size={15} color="#398765" /><Text style={styles.verifiedText}>Neon Auth ile gÃ¼venli oturum</Text></View></View>
-    <View style={styles.levelCard}><Text style={styles.levelSmall}>GERÃ‡EK HESAP</Text><Text style={styles.levelTitle}>Topluluk Ã¼yesi</Text><Text style={styles.levelNumber}>{reportCount}</Text><Text style={styles.levelHint}>Bu cihazdan gÃ¶rÃ¼nen yakÄ±n Ã§aÄŸrÄ± sayÄ±sÄ±</Text></View>
-    <View style={styles.menuRow}><Ionicons name="lock-closed-outline" size={20} color={GREEN} /><Text style={styles.menuText}>Oturum cihazda ÅŸifreli saklanÄ±r</Text></View>
-    <View style={styles.menuRow}><Ionicons name="location-outline" size={20} color={GREEN} /><Text style={styles.menuText}>CanlÄ± konum paylaÅŸÄ±mÄ± yok</Text></View>
-    <Pressable onPress={() => open(PRIVACY_URL)} style={styles.menuRow}><Ionicons name="shield-checkmark-outline" size={20} color={GREEN} /><Text style={styles.menuText}>Gizlilik PolitikasÄ±</Text><Ionicons name="open-outline" size={17} color="#78817D" /></Pressable>
-    <Pressable onPress={() => open(TERMS_URL)} style={styles.menuRow}><Ionicons name="document-text-outline" size={20} color={GREEN} /><Text style={styles.menuText}>KullanÄ±m ÅartlarÄ± ve Topluluk KurallarÄ±</Text><Ionicons name="open-outline" size={17} color="#78817D" /></Pressable>
+    <View style={styles.profileTop}><View style={styles.bigAvatar}><Text style={styles.bigAvatarText}>{name.slice(0, 1).toUpperCase()}</Text></View><Text style={styles.profileName}>{name}</Text><Text style={styles.profileEmail}>{user.email}</Text><View style={styles.verifiedRow}><Ionicons name="shield-checkmark" size={15} color="#398765" /><Text style={styles.verifiedText}>Neon Auth ile güvenli oturum</Text></View></View>
+    <View style={styles.levelCard}><Text style={styles.levelSmall}>GERÇEK HESAP</Text><Text style={styles.levelTitle}>Topluluk üyesi</Text><Text style={styles.levelNumber}>{reportCount}</Text><Text style={styles.levelHint}>Bu cihazdan görünen yakın çağrı sayısı</Text></View>
+    <View style={styles.menuRow}><Ionicons name="lock-closed-outline" size={20} color={GREEN} /><Text style={styles.menuText}>Oturum cihazda şifreli saklanır</Text></View>
+    <View style={styles.menuRow}><Ionicons name="location-outline" size={20} color={GREEN} /><Text style={styles.menuText}>Canlı konum paylaşımı yok</Text></View>
+    <Pressable onPress={() => open(PRIVACY_URL)} style={styles.menuRow}><Ionicons name="shield-checkmark-outline" size={20} color={GREEN} /><Text style={styles.menuText}>Gizlilik Politikası</Text><Ionicons name="open-outline" size={17} color="#78817D" /></Pressable>
+    <Pressable onPress={() => open(TERMS_URL)} style={styles.menuRow}><Ionicons name="document-text-outline" size={20} color={GREEN} /><Text style={styles.menuText}>Kullanım Şartları ve Topluluk Kuralları</Text><Ionicons name="open-outline" size={17} color="#78817D" /></Pressable>
     <Pressable onPress={() => open(DELETE_ACCOUNT_URL)} style={styles.menuRow}><Ionicons name="globe-outline" size={20} color={GREEN} /><Text style={styles.menuText}>Web'den hesap silme talebi</Text><Ionicons name="open-outline" size={17} color="#78817D" /></Pressable>
-    <Pressable disabled={deleting} onPress={requestDeletion} style={styles.menuRow}><Ionicons name="trash-outline" size={20} color={CORAL} /><Text style={[styles.menuText, { color: CORAL }]}>{deleting ? 'Talep oluÅŸturuluyorâ€¦' : 'HesabÄ±mÄ± ve verilerimi sil'}</Text></Pressable>
-    <Pressable onPress={logout} style={[styles.menuRow, { marginTop: 10 }]}><Ionicons name="log-out-outline" size={20} color={CORAL} /><Text style={[styles.menuText, { color: CORAL }]}>Ã‡Ä±kÄ±ÅŸ yap</Text></Pressable>
+    <Pressable disabled={deleting} onPress={requestDeletion} style={styles.menuRow}><Ionicons name="trash-outline" size={20} color={CORAL} /><Text style={[styles.menuText, { color: CORAL }]}>{deleting ? 'Talep oluşturuluyor…' : 'Hesabımı ve verilerimi sil'}</Text></Pressable>
+    <Pressable onPress={logout} style={[styles.menuRow, { marginTop: 10 }]}><Ionicons name="log-out-outline" size={20} color={CORAL} /><Text style={[styles.menuText, { color: CORAL }]}>Çıkış yap</Text></Pressable>
   </ScrollView>;
 }
 
@@ -401,13 +402,13 @@ function TermsGate({ onAccepted }: { onAccepted: (profile: Profile) => void }) {
   const [checked, setChecked] = useState(false);
   const [busy, setBusy] = useState(false);
   const submit = async () => {
-    if (!checked) return Alert.alert('Onay gerekli', 'Devam etmek iÃ§in KullanÄ±m ÅartlarÄ± ve Topluluk KurallarÄ±â€™nÄ± kabul et.');
+    if (!checked) return Alert.alert('Onay gerekli', 'Devam etmek için Kullanım Şartları ve Topluluk Kuralları’nı kabul et.');
     setBusy(true);
     try { onAccepted(await acceptTerms(TERMS_VERSION)); }
     catch (error) { Alert.alert('Onay kaydedilemedi', error instanceof Error ? error.message : 'Tekrar dene.'); }
     finally { setBusy(false); }
   };
-  return <SafeAreaView style={styles.termsGate}><ScrollView contentContainerStyle={styles.termsGateContent}><View style={styles.authLogo}><Ionicons name="paw" size={30} color="#fff" /></View><Text style={styles.termsGateTitle}>TopluluÄŸu gÃ¼venli tutalÄ±m.</Text><Text style={styles.termsGateBody}>Can HaritasÄ±â€™nda yardÄ±m Ã§aÄŸrÄ±sÄ± yayÄ±nlamadan veya diÄŸer kullanÄ±cÄ±larÄ±n iÃ§erikleriyle etkileÅŸmeden Ã¶nce gÃ¼ncel KullanÄ±m ÅartlarÄ± ve Topluluk KurallarÄ±â€™nÄ± kabul etmen gerekiyor.</Text><View style={styles.termsNotice}><Text style={styles.termsNoticeText}>YanlÄ±ÅŸ Ã§aÄŸrÄ±, spam, taciz, kiÅŸisel veri ifÅŸasÄ±, hayvana zarar verme ve uygunsuz iÃ§erik yasaktÄ±r. Uygunsuz Ã§aÄŸrÄ±larÄ± bildirebilir ve kullanÄ±cÄ±larÄ± engelleyebilirsin.</Text></View><View style={styles.legalLinks}><Pressable onPress={() => Linking.openURL(TERMS_URL)}><Text style={styles.legalLink}>KullanÄ±m ÅartlarÄ±</Text></Pressable><Text style={styles.legalDot}>â€¢</Text><Pressable onPress={() => Linking.openURL(PRIVACY_URL)}><Text style={styles.legalLink}>Gizlilik PolitikasÄ±</Text></Pressable></View><Pressable onPress={() => setChecked(v => !v)} style={styles.checkRow}><Ionicons name={checked ? 'checkbox' : 'square-outline'} size={24} color={checked ? GREEN : '#7B847F'} /><Text style={styles.checkText}>Okudum ve kabul ediyorum.</Text></Pressable><Pressable disabled={busy} onPress={submit} style={[styles.authButton, busy && { opacity: .65 }]}>{busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.authButtonText}>Kabul et ve devam et</Text>}</Pressable></ScrollView></SafeAreaView>;
+  return <SafeAreaView style={styles.termsGate}><ScrollView contentContainerStyle={styles.termsGateContent}><View style={styles.authLogo}><Ionicons name="paw" size={30} color="#fff" /></View><Text style={styles.termsGateTitle}>Topluluğu güvenli tutalım.</Text><Text style={styles.termsGateBody}>Can Haritası’nda yardım çağrısı yayınlamadan veya diğer kullanıcıların içerikleriyle etkileşmeden önce güncel Kullanım Şartları ve Topluluk Kuralları’nı kabul etmen gerekiyor.</Text><View style={styles.termsNotice}><Text style={styles.termsNoticeText}>Yanlış çağrı, spam, taciz, kişisel veri ifşası, hayvana zarar verme ve uygunsuz içerik yasaktır. Uygunsuz çağrıları bildirebilir ve kullanıcıları engelleyebilirsin.</Text></View><View style={styles.legalLinks}><Pressable onPress={() => Linking.openURL(TERMS_URL)}><Text style={styles.legalLink}>Kullanım Şartları</Text></Pressable><Text style={styles.legalDot}>•</Text><Pressable onPress={() => Linking.openURL(PRIVACY_URL)}><Text style={styles.legalLink}>Gizlilik Politikası</Text></Pressable></View><Pressable onPress={() => setChecked(v => !v)} style={styles.checkRow}><Ionicons name={checked ? 'checkbox' : 'square-outline'} size={24} color={checked ? GREEN : '#7B847F'} /><Text style={styles.checkText}>Okudum ve kabul ediyorum.</Text></Pressable><Pressable disabled={busy} onPress={submit} style={[styles.authButton, busy && { opacity: .65 }]}>{busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.authButtonText}>Kabul et ve devam et</Text>}</Pressable></ScrollView></SafeAreaView>;
 }
 
 function BottomNav({ active, setActive }: { active: Tab; setActive: (t: Tab) => void }) {
@@ -432,7 +433,7 @@ function AppInner() {
       await ensureProfile(session.user.name, current.city, current.district);
       setReports(await fetchNearbyReports(current.latitude, current.longitude, 10000));
     } catch (error) {
-      Alert.alert('YakÄ±ndaki Ã§aÄŸrÄ±lar alÄ±namadÄ±', error instanceof Error ? error.message : 'Tekrar dene.');
+      Alert.alert('Yakındaki çağrılar alınamadı', error instanceof Error ? error.message : 'Tekrar dene.');
     } finally { setLoading(false); }
   }, [session?.user]);
 
@@ -442,7 +443,7 @@ function AppInner() {
     ensureProfile(session.user.name)
       .then(() => getMyProfile())
       .then(value => { if (mounted) setProfile(value); })
-      .catch(error => { if (mounted) { setProfile(null); Alert.alert('Profil alÄ±namadÄ±', error instanceof Error ? error.message : 'Tekrar dene.'); } });
+      .catch(error => { if (mounted) { setProfile(null); Alert.alert('Profil alınamadı', error instanceof Error ? error.message : 'Tekrar dene.'); } });
     return () => { mounted = false; };
   }, [session?.user]);
 
@@ -451,9 +452,9 @@ function AppInner() {
     refresh().catch(() => undefined);
   }, [session?.user, profile?.terms_accepted_at, profile?.terms_version, refresh]);
 
-  if (isPending) return <View style={styles.loadingScreen}><ActivityIndicator size="large" color={GREEN} /><Text style={styles.loadingText}>GÃ¼venli oturum kontrol ediliyorâ€¦</Text></View>;
+  if (isPending) return <View style={styles.loadingScreen}><ActivityIndicator size="large" color={GREEN} /><Text style={styles.loadingText}>Güvenli oturum kontrol ediliyor…</Text></View>;
   if (!session?.user) return <AuthScreen />;
-  if (profile === undefined) return <View style={styles.loadingScreen}><ActivityIndicator size="large" color={GREEN} /><Text style={styles.loadingText}>Profil ve topluluk kurallarÄ± kontrol ediliyorâ€¦</Text></View>;
+  if (profile === undefined) return <View style={styles.loadingScreen}><ActivityIndicator size="large" color={GREEN} /><Text style={styles.loadingText}>Profil ve topluluk kuralları kontrol ediliyor…</Text></View>;
   if (!profile?.terms_accepted_at || profile.terms_version !== TERMS_VERSION) return <TermsGate onAccepted={setProfile} />;
 
   const help = async (reportId: string) => { await markHelp(reportId); };
