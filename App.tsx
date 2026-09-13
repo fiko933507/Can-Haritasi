@@ -18,7 +18,6 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { Map as MapLibreMap, Camera, Marker } from '@maplibre/maplibre-react-native';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import {
@@ -42,6 +41,8 @@ import {
   TERMS_VERSION,
   uploadReportImage,
 } from './src/backend';
+
+declare const require: (moduleName: string) => any;
 
 type Tab = 'home' | 'map' | 'report' | 'impact' | 'profile';
 type Need = 'Mama' | 'Su' | 'Veteriner' | 'Güvenli alan';
@@ -257,6 +258,7 @@ function Home({ reports, loading, position, refresh, goReport, userName, onHelp,
 }
 
 function MapScreen({ reports, position, onHelp, onModerated }: { reports: NearbyReport[]; position: Position | null; onHelp: (id: string) => Promise<void>; onModerated: () => Promise<void> }) {
+  const { Map: MapLibreMap, Camera, Marker } = require('@maplibre/maplibre-react-native') as typeof import('@maplibre/maplibre-react-native');
   const [selected, setSelected] = useState(0);
   const active = reports[selected] || reports[0];
   const place = [position?.district, position?.city].filter(Boolean).join(', ') || 'Konum bekleniyor';
@@ -416,6 +418,31 @@ function BottomNav({ active, setActive }: { active: Tab; setActive: (t: Tab) => 
   return <SafeAreaView edges={['bottom']} style={styles.navSafe}><View style={styles.nav}>{items.map(item => <Pressable key={item.key} style={styles.navItem} onPress={() => setActive(item.key)}>{item.key === 'report' ? <View style={styles.addButton}><Ionicons name="add" size={28} color="#fff" /></View> : <><Ionicons name={active === item.key ? item.icon : (`${item.icon}-outline` as keyof typeof Ionicons.glyphMap)} size={21} color={active === item.key ? CORAL : '#78817D'} /><Text style={[styles.navLabel, active === item.key && { color: CORAL }]}>{item.label}</Text></>}</Pressable>)}</View></SafeAreaView>;
 }
 
+
+class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: string | null }> {
+  state = { error: null as string | null };
+
+  static getDerivedStateFromError(error: unknown) {
+    const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+    return { error: message };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.error('Can Haritası startup/render error', error);
+  }
+
+  render() {
+    if (this.state.error) {
+      return <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F5EF', padding: 24, justifyContent: 'center' }}>
+        <Text style={{ color: '#153F36', fontSize: 24, fontWeight: '900', marginBottom: 12 }}>Can Haritası açılamadı</Text>
+        <Text style={{ color: '#5F6C67', fontSize: 14, lineHeight: 21, marginBottom: 16 }}>Başlangıçta bir uygulama hatası yakalandı. Aşağıdaki metni bize gönder.</Text>
+        <Text selectable style={{ color: '#7A2E22', fontSize: 12, lineHeight: 18 }}>{this.state.error}</Text>
+      </SafeAreaView>;
+    }
+    return this.props.children;
+  }
+}
+
 function AppInner() {
   const { data: session, isPending } = authClient.useSession();
   const [active, setActive] = useState<Tab>('home');
@@ -473,7 +500,7 @@ function AppInner() {
   </View>;
 }
 
-export default function App() { return <SafeAreaProvider><AppInner /></SafeAreaProvider>; }
+export default function App() { return <SafeAreaProvider><AppErrorBoundary><AppInner /></AppErrorBoundary></SafeAreaProvider>; }
 
 const styles = StyleSheet.create({
   app: { flex: 1, backgroundColor: CREAM }, content: { flex: 1, backgroundColor: CREAM }, loadingScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: CREAM, gap: 14 }, loadingText: { color: GREEN, fontWeight: '700' },
