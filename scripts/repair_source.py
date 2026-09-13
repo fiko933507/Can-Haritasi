@@ -4,14 +4,31 @@ APP = Path("App.tsx")
 
 text = APP.read_text(encoding="utf-8-sig")
 
-# App.tsx was once read as Windows-1252 and written back as UTF-8.
-# Reverse that mojibake transformation only when the known markers exist.
+# App.tsx was once read with a legacy Windows byte mapping and written back as UTF-8.
+# Recover the original UTF-8 bytes. Some bytes became C1 controls, while others became
+# Windows-1252 printable characters, so use a mixed inverse mapping instead of plain cp1252.
+def recover_utf8_mojibake(value: str) -> str:
+    raw = bytearray()
+    for ch in value:
+        code = ord(ch)
+        if code <= 0xFF:
+            raw.append(code)
+            continue
+        try:
+            encoded = ch.encode("cp1252")
+        except UnicodeEncodeError as exc:
+            raise ValueError(f"Cannot reverse character U+{code:04X} during mojibake repair") from exc
+        if len(encoded) != 1:
+            raise ValueError(f"Unexpected multi-byte reverse mapping for U+{code:04X}")
+        raw.extend(encoded)
+    return raw.decode("utf-8")
+
 markers = ("Ã", "Å", "Ä", "Â", "â")
 if any(marker in text for marker in markers):
-    text = text.encode("cp1252").decode("utf-8")
+    text = recover_utf8_mojibake(text)
 
 # Keep the managed Neon Auth native e-mail flow on an absolute HTTPS callback.
-# Neon Managed Auth currently only accepts http/https trusted-domain entries,
+# Neon Managed Auth currently accepts only http/https trusted-domain entries,
 # while the Expo client app uses the canharitasi:// scheme internally.
 if "  NEON_AUTH_URL,\n" not in text:
     text = text.replace("  NearbyReport,\n", "  NearbyReport,\n  NEON_AUTH_URL,\n", 1)
