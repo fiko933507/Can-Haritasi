@@ -1,6 +1,6 @@
 name: Android test APK
 
-# startup-diagnostics-v2
+# auth-web-browser-fix
 on:
   workflow_dispatch:
   push:
@@ -15,7 +15,7 @@ on:
       - '.github/workflows/android-test-apk.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-apk:
@@ -41,6 +41,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Expo WebBrowser required by Better Auth
+        run: npx expo install expo-web-browser
+
+      - name: Persist dependency lock if changed
+        shell: bash
+        run: |
+          if ! git diff --quiet -- package.json package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package.json package-lock.json
+            git commit -m "fix: add expo-web-browser required by Better Auth"
+            git push
+          else
+            echo "expo-web-browser already recorded."
+          fi
+
       - name: Verify Expo dependencies
         run: npx expo install --check
 
@@ -64,7 +80,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: can-haritasi-v1.2-startup-diagnostic-apk
+          name: can-haritasi-v1.2-auth-fixed-apk
           path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
