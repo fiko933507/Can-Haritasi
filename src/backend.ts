@@ -125,12 +125,14 @@ export async function acceptTerms(version = TERMS_VERSION) {
 }
 
 export async function fetchNearbyReports(latitude: number, longitude: number, radiusM = 10000) {
-  return rpc<NearbyReport[]>('nearby_reports_v3', {
-    p_lat: latitude,
-    p_lon: longitude,
-    p_radius_m: radiusM,
-    p_limit: 50,
-  });
+  const body = { p_lat: latitude, p_lon: longitude, p_radius_m: radiusM, p_limit: 50 };
+  try {
+    return await rpc<NearbyReport[]>('nearby_reports_v4', body);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '';
+    if (!message.includes('PGRST202') && !message.toLowerCase().includes('could not find the function') && !message.includes('404')) throw error;
+    return rpc<NearbyReport[]>('nearby_reports_v3', body);
+  }
 }
 
 export async function createAnimalReport(input: {
@@ -142,9 +144,10 @@ export async function createAnimalReport(input: {
   accuracyM?: number | null;
   city?: string | null;
   district?: string | null;
+  locationVisibility?: 'approximate' | 'exact';
 }) {
   const urgency = input.need === 'Veteriner' ? 4 : input.need === 'Güvenli alan' ? 3 : 2;
-  return rpc<CreatedReport>('create_animal_report', {
+  const base = {
     p_animal_type: input.animalType,
     p_category: input.need,
     p_condition: input.need,
@@ -156,7 +159,17 @@ export async function createAnimalReport(input: {
     p_accuracy_m: input.accuracyM ?? null,
     p_city: input.city || null,
     p_district: input.district || null,
-  });
+  };
+  try {
+    return await rpc<CreatedReport>('create_animal_report_v2', {
+      ...base,
+      p_location_visibility: input.locationVisibility || 'approximate',
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '';
+    if (!message.includes('PGRST202') && !message.toLowerCase().includes('could not find the function') && !message.includes('404')) throw error;
+    return rpc<CreatedReport>('create_animal_report', base);
+  }
 }
 
 export async function markHelp(reportId: string, action = 'on_the_way') {
