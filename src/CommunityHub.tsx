@@ -26,6 +26,7 @@ import {
   VolunteerPreferences,
 } from './communityApi';
 import { COLORS, RADII } from './theme';
+import { enableSmartNotifications } from './notifications';
 
 type IconName = keyof typeof Ionicons.glyphMap & string;
 type PositionLike = {
@@ -102,6 +103,8 @@ export function CommunityHub({ position, reportCount }: { position: PositionLike
   const [savingVolunteer, setSavingVolunteer] = useState(false);
   const [savingNotifications, setSavingNotifications] = useState(false);
   const [addingPoint, setAddingPoint] = useState(false);
+  const [enablingPush, setEnablingPush] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
   const [backendReady, setBackendReady] = useState(true);
 
   const load = async () => {
@@ -134,6 +137,21 @@ export function CommunityHub({ position, reportCount }: { position: PositionLike
       setBackendReady(false);
       Alert.alert('Kaydedilemedi', error instanceof Error ? error.message : 'Tekrar dene.');
     } finally { setSavingVolunteer(false); }
+  };
+
+  const enablePush = async () => {
+    setEnablingPush(true);
+    try {
+      const result = await enableSmartNotifications(position);
+      if (!result.enabled) {
+        Alert.alert('Bildirim izni verilmedi', 'Akıllı bildirimleri daha sonra cihaz ayarlarından veya bu ekrandan etkinleştirebilirsin.');
+        return;
+      }
+      setPushEnabled(true);
+      Alert.alert('Bildirimler hazır 🐾', 'Yakındaki çağrılar tercih ettiğin filtrelere uyduğunda cihazına bildirim gönderilebilecek.');
+    } catch (error) {
+      Alert.alert('Bildirimler etkinleştirilemedi', error instanceof Error ? error.message : 'Tekrar dene.');
+    } finally { setEnablingPush(false); }
   };
 
   const saveAlerts = async () => {
@@ -236,6 +254,7 @@ export function CommunityHub({ position, reportCount }: { position: PositionLike
       <ToggleCard active={notifications.urgent_only} icon="alert-circle-outline" label="Yalnızca yüksek öncelikli çağrılar" onPress={() => setNotifications(v => ({ ...v, urgent_only: !v.urgent_only }))} />
       <View style={styles.speciesRow}><Pressable onPress={() => setNotifications(v => ({ ...v, cats: !v.cats }))} style={[styles.speciesPill, notifications.cats && styles.speciesPillActive]}><Ionicons name="paw" size={17} color={notifications.cats ? '#fff' : COLORS.forest} /><Text style={[styles.speciesText, notifications.cats && { color: '#fff' }]}>Kedi</Text></Pressable><Pressable onPress={() => setNotifications(v => ({ ...v, dogs: !v.dogs }))} style={[styles.speciesPill, notifications.dogs && styles.speciesPillActive]}><Ionicons name="heart" size={17} color={notifications.dogs ? '#fff' : COLORS.forest} /><Text style={[styles.speciesText, notifications.dogs && { color: '#fff' }]}>Köpek</Text></Pressable></View>
       <Pressable onPress={saveAlerts} disabled={savingNotifications} style={styles.secondarySave}>{savingNotifications ? <ActivityIndicator color={COLORS.forest} /> : <Text style={styles.secondarySaveText}>Tercihleri kaydet</Text>}</Pressable>
+      <Pressable onPress={enablePush} disabled={enablingPush || pushEnabled} style={[styles.pushButton, pushEnabled && styles.pushButtonDone]}>{enablingPush ? <ActivityIndicator color="#fff" /> : <><Ionicons name={pushEnabled ? "checkmark-circle" : "notifications"} size={18} color="#fff" /><Text style={styles.pushButtonText}>{pushEnabled ? 'Bildirimler etkin' : 'Cihaz bildirimlerini etkinleştir'}</Text></>}</Pressable>
     </View>
 
     <SectionTitle icon="water-outline" title="Mama & su noktaları" subtitle={position ? ([position.district, position.city].filter(Boolean).join(' • ') || 'Yakınındaki ortak noktalar') : 'Konum açıldığında yakındaki noktalar görünür'} />
@@ -316,6 +335,9 @@ const styles = StyleSheet.create({
   speciesText: { color: COLORS.forest, fontWeight: '900', fontSize: 11 },
   secondarySave: { minHeight: 44, marginTop: 4, borderRadius: 14, backgroundColor: COLORS.sage, alignItems: 'center', justifyContent: 'center' },
   secondarySaveText: { color: COLORS.forest, fontWeight: '900', fontSize: 11 },
+  pushButton: { minHeight: 46, marginTop: 2, borderRadius: 14, backgroundColor: COLORS.coral, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center' },
+  pushButtonDone: { backgroundColor: COLORS.success },
+  pushButtonText: { color: '#fff', fontWeight: '900', fontSize: 11 },
   pointCreate: { backgroundColor: COLORS.paper, borderRadius: 22, borderWidth: 1, borderColor: COLORS.line, padding: 13, marginBottom: 10 },
   pointInput: { height: 48, borderRadius: 14, backgroundColor: COLORS.cream, paddingHorizontal: 12, color: COLORS.forest, fontSize: 11, borderWidth: 1, borderColor: COLORS.line },
   pointButtons: { flexDirection: 'row', gap: 7, marginTop: 9 },
