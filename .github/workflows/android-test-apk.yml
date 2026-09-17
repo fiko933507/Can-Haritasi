@@ -4,7 +4,7 @@ name: Android test APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, v1.3-community-cute-ui]
     paths:
       - 'App.tsx'
       - 'src/**'
