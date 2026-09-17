@@ -1,6 +1,7 @@
 const DEFAULT_API='https://ep-red-lake-ayk3kz85.apirest.c-5.us-east-2.aws.neon.tech/canharitasi/rest/v1';
 const API=process.env.DATA_API_URL||DEFAULT_API;
 const EXPO='https://exp.host/--/api/v2/push/send';
+const DISPATCH_SECRET=process.env.DISPATCH_SECRET||'';
 
 const json=(value,status=200)=>new Response(JSON.stringify(value),{
   status,
@@ -21,19 +22,25 @@ export default {
     const reportId=String(body?.reportId||'');
     if(!/^[0-9a-f-]{36}$/i.test(reportId)) return json({error:'invalid report id'},400);
 
-    const targetResponse=await fetch(API+'/rpc/notification_targets_for_report',{
+    const ownership=await fetch(API+'/rpc/can_dispatch_report_notification',{
       method:'POST',
-      headers:{
-        authorization,
-        'content-type':'application/json',
-        accept:'application/json',
-      },
+      headers:{authorization,'content-type':'application/json',accept:'application/json'},
       body:JSON.stringify({p_report_id:reportId}),
+    });
+    if(!ownership.ok) return json({error:'ownership check failed'},ownership.status);
+    const allowed=await ownership.json();
+    if(allowed!==true) return json({error:'forbidden'},403);
+    if(!DISPATCH_SECRET) return json({error:'notification service unavailable'},503);
+
+    const targetResponse=await fetch(API+'/rpc/notification_targets_internal',{
+      method:'POST',
+      headers:{'content-type':'application/json',accept:'application/json'},
+      body:JSON.stringify({p_report_id:reportId,p_dispatch_secret:DISPATCH_SECRET}),
     });
 
     if(!targetResponse.ok){
       const detail=await targetResponse.text();
-      return json({error:'target lookup failed',detail:detail.slice(0,300)},targetResponse.status);
+      return json({error:'target lookup failed',detail:detail.slice(0,300)},502);
     }
 
     const targets=await targetResponse.json();
