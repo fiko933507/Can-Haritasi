@@ -788,10 +788,4 @@ GRANT EXECUTE ON FUNCTION public.can_dispatch_report_notification(uuid) TO authe
 REVOKE ALL ON FUNCTION public.notification_targets_internal(uuid,text) FROM PUBLIC, anonymous, authenticated;
 GRANT EXECUTE ON FUNCTION public.notification_targets_internal(uuid,text) TO anonymous;
 
-DO $
-BEGIN
-  IF to_regprocedure('public.notification_targets_for_report(uuid)') IS NOT NULL THEN
-    EXECUTE 'REVOKE ALL ON FUNCTION public.notification_targets_for_report(uuid) FROM PUBLIC, anonymous, authenticated';
-  END IF;
-END
-$;
+
