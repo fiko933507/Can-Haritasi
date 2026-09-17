@@ -52,3 +52,15 @@ Can Haritası çocuklara yönelik değildir. Google Play hedef kitlesi **18 yaş
 ## Politika bağlantısı
 
 `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/privacy`
+
+## v1.3 Topluluk özellikleri
+
+Can Haritası'nın topluluk özellikleri etkinleştirildiğinde aşağıdaki ek veriler işlenebilir:
+
+- **Gönüllü becerileri:** Kullanıcının kendi isteğiyle seçtiği araçla taşıma, taşıma çantası/kafesi, geçici yuva, veterinere götürme ve mama-su desteği seçenekleri.
+- **Bildirim tercihleri:** Kullanıcının seçtiği yakınlık yarıçapı, aciliyet filtresi ve hayvan türü tercihleri.
+- **Mama / su noktaları:** Kullanıcının bilinçli olarak ortak topluluk noktası olarak eklediği konum, nokta türü ve isteğe bağlı kısa not. Bu kayıt kişisel canlı konum takibi değildir.
+- **Vaka geçmişi:** Yardım çağrısının oluşturulması ve gönüllü yardım eylemleri gibi topluluk olaylarının zaman bilgisi.
+- **Konum gizliliği:** Yardım çağrısı oluştururken kullanıcı yaklaşık veya tam konum görünürlüğünü seçebilir. Yaklaşık görünürlükte diğer kullanıcılara koordinatlar azaltılmış hassasiyetle gösterilir.
+
+Bu veriler uygulama işlevselliği, güvenli gönüllü eşleştirmesi, yakın çağrı filtreleme ve topluluk koordinasyonu amacıyla kullanılır. Reklam hedefleme veya veri satışı amacıyla kullanılmaz.
