@@ -43,6 +43,7 @@ import {
 } from './src/backend';
 import { CommunityHub } from './src/CommunityHub';
 import { findPotentialDuplicates, getReportTimeline, PotentialDuplicate } from './src/communityApi';
+import { dispatchSmartNotifications } from './src/notifications';
 
 declare const require: (moduleName: string) => any;
 
@@ -362,6 +363,7 @@ function ReportScreen({ defaultPosition, onPublished }: { defaultPosition: Posit
         catch (error) { Alert.alert('Çağrı yayınlandı, fotoğraf bekliyor', error instanceof Error ? error.message : 'Fotoğraf daha sonra tekrar yüklenebilir.'); }
       }
       setSent(true);
+      await dispatchSmartNotifications(report.id);
       await onPublished();
     } catch (error) {
       Alert.alert('Çağrı yayınlanamadı', error instanceof Error ? error.message : 'Tekrar dene.');
