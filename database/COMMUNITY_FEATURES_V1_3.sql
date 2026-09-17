@@ -561,6 +561,18 @@ WHERE NOT EXISTS (
   SELECT 1 FROM public.report_events e WHERE e.report_id=r.id AND e.event_type='reported'
 );
 
+REVOKE ALL ON FUNCTION public.my_volunteer_preferences() FROM PUBLIC, anonymous, authenticated;
+REVOKE ALL ON FUNCTION public.update_volunteer_preferences(boolean,boolean,boolean,boolean,boolean) FROM PUBLIC, anonymous, authenticated;
+REVOKE ALL ON FUNCTION public.my_notification_preferences() FROM PUBLIC, anonymous, authenticated;
+REVOKE ALL ON FUNCTION public.update_notification_preferences(integer,boolean,boolean,boolean) FROM PUBLIC, anonymous, authenticated;
+REVOKE ALL ON FUNCTION public.nearby_community_points(double precision,double precision,integer,integer) FROM PUBLIC, anonymous, authenticated;
+REVOKE ALL ON FUNCTION public.add_community_point(text,double precision,double precision,text) FROM PUBLIC, anonymous, authenticated;
+REVOKE ALL ON FUNCTION public.refresh_community_point(uuid) FROM PUBLIC, anonymous, authenticated;
+REVOKE ALL ON FUNCTION public.report_timeline(uuid) FROM PUBLIC, anonymous, authenticated;
+REVOKE ALL ON FUNCTION public.create_animal_report_v2(text,text,text,smallint,text,text,double precision,double precision,integer,text,text,text) FROM PUBLIC, anonymous, authenticated;
+REVOKE ALL ON FUNCTION public.nearby_reports_v4(double precision,double precision,integer,integer) FROM PUBLIC, anonymous, authenticated;
+REVOKE ALL ON FUNCTION public.find_potential_duplicates(text,double precision,double precision,integer,integer) FROM PUBLIC, anonymous, authenticated;
+
 GRANT EXECUTE ON FUNCTION public.my_volunteer_preferences() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_volunteer_preferences(boolean,boolean,boolean,boolean,boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.my_notification_preferences() TO authenticated;
@@ -672,7 +684,48 @@ BEGIN
 END
 $$;
 
-CREATE OR REPLACE FUNCTION public.notification_targets_for_report(p_report_id uuid)
+CREATE TABLE IF NOT EXISTS public.notification_dispatch_config (
+  singleton boolean PRIMARY KEY DEFAULT true CHECK (singleton),
+  dispatch_secret text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.notification_dispatch_config ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.notification_dispatch_config FROM PUBLIC, anonymous, authenticated;
+
+INSERT INTO public.notification_dispatch_config(singleton,dispatch_secret)
+VALUES(
+  true,
+  replace(gen_random_uuid()::text,'-','') || replace(gen_random_uuid()::text,'-','')
+)
+ON CONFLICT (singleton) DO NOTHING;
+
+CREATE OR REPLACE FUNCTION public.can_dispatch_report_notification(p_report_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path TO 'public','auth','pg_temp'
+AS $$
+DECLARE
+  v_auth_user_id text := auth.user_id();
+BEGIN
+  IF v_auth_user_id IS NULL OR v_auth_user_id='' THEN
+    RETURN false;
+  END IF;
+  RETURN EXISTS(
+    SELECT 1
+    FROM public.animal_reports r
+    JOIN public.profiles p ON p.id=r.reporter_id
+    WHERE r.id=p_report_id AND p.auth_user_id=v_auth_user_id
+  );
+END
+$$;
+
+CREATE OR REPLACE FUNCTION public.notification_targets_internal(
+  p_report_id uuid,
+  p_dispatch_secret text
+)
 RETURNS TABLE(
   expo_push_token text,
   animal_type varchar,
@@ -683,23 +736,26 @@ RETURNS TABLE(
 LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
-SET search_path TO 'public','auth','pg_temp'
+SET search_path TO 'public','pg_temp'
 AS $$
 DECLARE
-  v_auth_user_id text := auth.user_id();
   v_reporter_id uuid;
+  v_expected_secret text;
 BEGIN
-  IF v_auth_user_id IS NULL OR v_auth_user_id='' THEN
-    RAISE EXCEPTION 'authentication required' USING ERRCODE='42501';
+  SELECT dispatch_secret INTO v_expected_secret
+  FROM public.notification_dispatch_config
+  WHERE singleton=true;
+
+  IF v_expected_secret IS NULL OR p_dispatch_secret IS DISTINCT FROM v_expected_secret THEN
+    RAISE EXCEPTION 'forbidden' USING ERRCODE='42501';
   END IF;
 
   SELECT r.reporter_id INTO v_reporter_id
   FROM public.animal_reports r
-  JOIN public.profiles p ON p.id=r.reporter_id
-  WHERE r.id=p_report_id AND p.auth_user_id=v_auth_user_id;
+  WHERE r.id=p_report_id;
 
   IF v_reporter_id IS NULL THEN
-    RAISE EXCEPTION 'report not found or not owned by caller' USING ERRCODE='42501';
+    RAISE EXCEPTION 'report not found' USING ERRCODE='P0002';
   END IF;
 
   RETURN QUERY
@@ -726,6 +782,8 @@ BEGIN
 END
 $$;
 
-GRANT EXECUTE ON FUNCTION public.register_push_device(text,text,double precision,double precision) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.disable_push_device(text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.notification_targets_for_report(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.can_dispatch_report_notification(uuid) FROM PUBLIC, anonymous, authenticated;
+GRANT EXECUTE ON FUNCTION public.can_dispatch_report_notification(uuid) TO authenticated;
+
+REVOKE ALL ON FUNCTION public.notification_targets_internal(uuid,text) FROM PUBLIC, anonymous, authenticated;
+GRANT EXECUTE ON FUNCTION public.notification_targets_internal(uuid,text) TO anonymous;
