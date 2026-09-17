@@ -29,3 +29,5 @@
 - Yardım çağrılarında yaklaşık/tam konum görünürlüğü seçeneği eklendi.
 - Mükerrer çağrı uyarısı eklendi.
 - Neon Auth mobil oturum cookie uyumluluğu korundu.
+
+- İsteğe bağlı akıllı push bildirim altyapısı ve cihaz izin akışı eklendi.
