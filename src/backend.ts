@@ -18,10 +18,11 @@ export const authClient = createAuthClient({
     expoClient({
       scheme: 'canharitasi',
       storagePrefix: 'canharitasi',
-      // Managed Neon Auth may use its own cookie prefix. An empty prefix tells
-      // the Expo adapter to accept only recognized Better Auth session cookie
-      // suffixes (session_token/session_data) regardless of server prefix.
-      cookiePrefix: '',
+      // Better Auth 1.7.4 falls back to "better-auth" for a bare empty string.
+      // Using an array containing an empty prefix keeps suffix matching active,
+      // so Managed Neon Auth session_token/session_data cookies are persisted
+      // regardless of the server-side cookie prefix.
+      cookiePrefix: [''],
       storage: SecureStore,
     }),
     jwtClient(),
