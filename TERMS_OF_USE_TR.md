@@ -27,3 +27,9 @@ Her yardım çağrısında **Bildir** ve **Engelle** seçenekleri bulunur. Bildi
 
 **Yayınlanan şartlar:**  
 `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/terms`
+
+## Topluluk noktaları ve gönüllü bilgileri
+
+Kullanıcılar mama/su noktası veya gönüllü becerisi eklerken bilgilerin güncel ve gerçeğe uygun olmasından sorumludur. Özel mülk, kişisel adres, telefon numarası veya üçüncü kişilere ait hassas bilgiler ortak topluluk noktası notlarına yazılmamalıdır. Mama/su noktaları fiziksel güvenliği garanti etmez; kullanıcılar çevre koşullarını kendi güvenliklerini tehlikeye atmadan değerlendirmelidir.
+
+Can Bilgisi bölümü bilgilendirme amaçlıdır; veteriner tanısı veya tedavisinin yerine geçmez. Acil veya şüpheli durumda profesyonel veteriner desteği aranmalıdır.
