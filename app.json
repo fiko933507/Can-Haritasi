@@ -27,13 +27,20 @@
         }
       ],
       "@maplibre/maplibre-react-native",
-      "expo-system-ui"
+      "expo-system-ui",
+      [
+        "expo-notifications",
+        {
+          "color": "#F47B63",
+          "defaultChannel": "nearby-help"
+        }
+      ]
     ],
     "android": {
       "package": "com.fiel.canharitasi",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#153F36"
+        "backgroundColor": "#285247"
       },
       "permissions": [
         "ACCESS_COARSE_LOCATION",
@@ -54,7 +61,7 @@
     },
     "newArchEnabled": true,
     "owner": "fiko93",
-    "backgroundColor": "#F7F5EF",
+    "backgroundColor": "#FFF9F0",
     "icon": "./assets/icon.png",
     "extra": {
       "eas": {
