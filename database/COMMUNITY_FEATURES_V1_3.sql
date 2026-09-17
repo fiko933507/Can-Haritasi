@@ -572,3 +572,160 @@ GRANT EXECUTE ON FUNCTION public.report_timeline(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_animal_report_v2(text,text,text,smallint,text,text,double precision,double precision,integer,text,text,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.nearby_reports_v4(double precision,double precision,integer,integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.find_potential_duplicates(text,double precision,double precision,integer,integer) TO authenticated;
+
+
+-- Smart push notification delivery
+CREATE TABLE IF NOT EXISTS public.push_devices (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  profile_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  expo_push_token text NOT NULL UNIQUE,
+  platform varchar(12) NOT NULL CHECK (platform IN ('android','ios')),
+  last_location geography(Point,4326),
+  enabled boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS push_devices_profile_enabled_idx
+  ON public.push_devices(profile_id, enabled);
+CREATE INDEX IF NOT EXISTS push_devices_location_gix
+  ON public.push_devices USING gist(last_location);
+
+ALTER TABLE public.push_devices ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.push_devices FROM anonymous, authenticated;
+
+CREATE OR REPLACE FUNCTION public.register_push_device(
+  p_token text,
+  p_platform text,
+  p_lat double precision DEFAULT NULL,
+  p_lon double precision DEFAULT NULL
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public','auth','pg_temp'
+AS $$
+DECLARE
+  v_auth_user_id text := auth.user_id();
+  v_profile_id uuid;
+  v_location geography;
+BEGIN
+  IF v_auth_user_id IS NULL OR v_auth_user_id='' THEN
+    RAISE EXCEPTION 'authentication required' USING ERRCODE='42501';
+  END IF;
+  IF p_platform NOT IN ('android','ios') THEN
+    RAISE EXCEPTION 'invalid platform' USING ERRCODE='22023';
+  END IF;
+  IF length(trim(p_token)) < 12 OR length(trim(p_token)) > 512 THEN
+    RAISE EXCEPTION 'invalid push token' USING ERRCODE='22023';
+  END IF;
+  IF (p_lat IS NULL) <> (p_lon IS NULL) THEN
+    RAISE EXCEPTION 'both coordinates are required together' USING ERRCODE='22023';
+  END IF;
+  IF p_lat IS NOT NULL THEN
+    IF p_lat NOT BETWEEN -90 AND 90 OR p_lon NOT BETWEEN -180 AND 180 THEN
+      RAISE EXCEPTION 'invalid coordinates' USING ERRCODE='22023';
+    END IF;
+    -- Store only approximate (~100m) position for notification matching.
+    v_location := ST_SetSRID(
+      ST_MakePoint(round(p_lon::numeric,3)::double precision, round(p_lat::numeric,3)::double precision),
+      4326
+    )::geography;
+  END IF;
+  SELECT id INTO v_profile_id FROM public.profiles WHERE auth_user_id=v_auth_user_id;
+  IF v_profile_id IS NULL THEN
+    INSERT INTO public.profiles(auth_user_id) VALUES(v_auth_user_id) RETURNING id INTO v_profile_id;
+  END IF;
+  INSERT INTO public.notification_preferences(profile_id)
+  VALUES(v_profile_id)
+  ON CONFLICT (profile_id) DO NOTHING;
+  INSERT INTO public.push_devices(profile_id,expo_push_token,platform,last_location,enabled,updated_at)
+  VALUES(v_profile_id,trim(p_token),p_platform,v_location,true,now())
+  ON CONFLICT (expo_push_token) DO UPDATE SET
+    profile_id=EXCLUDED.profile_id,
+    platform=EXCLUDED.platform,
+    last_location=COALESCE(EXCLUDED.last_location,public.push_devices.last_location),
+    enabled=true,
+    updated_at=now();
+  RETURN true;
+END
+$$;
+
+CREATE OR REPLACE FUNCTION public.disable_push_device(p_token text)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public','auth','pg_temp'
+AS $$
+DECLARE
+  v_auth_user_id text := auth.user_id();
+  v_profile_id uuid;
+BEGIN
+  IF v_auth_user_id IS NULL OR v_auth_user_id='' THEN
+    RAISE EXCEPTION 'authentication required' USING ERRCODE='42501';
+  END IF;
+  SELECT id INTO v_profile_id FROM public.profiles WHERE auth_user_id=v_auth_user_id;
+  UPDATE public.push_devices
+  SET enabled=false,updated_at=now()
+  WHERE profile_id=v_profile_id AND expo_push_token=trim(p_token);
+  RETURN true;
+END
+$$;
+
+CREATE OR REPLACE FUNCTION public.notification_targets_for_report(p_report_id uuid)
+RETURNS TABLE(
+  expo_push_token text,
+  animal_type varchar,
+  condition varchar,
+  title varchar,
+  report_id uuid
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path TO 'public','auth','pg_temp'
+AS $$
+DECLARE
+  v_auth_user_id text := auth.user_id();
+  v_reporter_id uuid;
+BEGIN
+  IF v_auth_user_id IS NULL OR v_auth_user_id='' THEN
+    RAISE EXCEPTION 'authentication required' USING ERRCODE='42501';
+  END IF;
+
+  SELECT r.reporter_id INTO v_reporter_id
+  FROM public.animal_reports r
+  JOIN public.profiles p ON p.id=r.reporter_id
+  WHERE r.id=p_report_id AND p.auth_user_id=v_auth_user_id;
+
+  IF v_reporter_id IS NULL THEN
+    RAISE EXCEPTION 'report not found or not owned by caller' USING ERRCODE='42501';
+  END IF;
+
+  RETURN QUERY
+  SELECT pd.expo_push_token,r.animal_type,r.condition,r.title,r.id
+  FROM public.animal_reports r
+  JOIN public.push_devices pd ON pd.enabled=true AND pd.profile_id<>r.reporter_id
+  JOIN public.notification_preferences np ON np.profile_id=pd.profile_id
+  WHERE r.id=p_report_id
+    AND pd.last_location IS NOT NULL
+    AND ST_DWithin(r.location,pd.last_location,np.radius_m)
+    AND (NOT np.urgent_only OR r.urgency>=4)
+    AND (
+      (lower(r.animal_type)='kedi' AND np.cats)
+      OR (lower(r.animal_type)='köpek' AND np.dogs)
+      OR (lower(r.animal_type) NOT IN ('kedi','köpek') AND (np.cats OR np.dogs))
+    )
+    AND NOT EXISTS (
+      SELECT 1 FROM public.blocked_users bu
+      WHERE (bu.blocker_id=pd.profile_id AND bu.blocked_id=r.reporter_id)
+         OR (bu.blocker_id=r.reporter_id AND bu.blocked_id=pd.profile_id)
+    )
+  ORDER BY pd.updated_at DESC
+  LIMIT 500;
+END
+$$;
+
+GRANT EXECUTE ON FUNCTION public.register_push_device(text,text,double precision,double precision) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.disable_push_device(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.notification_targets_for_report(uuid) TO authenticated;
