@@ -74,3 +74,18 @@ Yasal sayfalar:
 - Gizlilik: https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/privacy
 - Şartlar: https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/terms
 - Hesap silme: https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/delete-account
+
+## v1.3 — Can Rehberi & Topluluk
+
+v1.3, Can Haritası'nı yalnızca çağrı haritası olmaktan çıkarıp mahalle odaklı bir sokak hayvanı dayanışma ağına dönüştürür.
+
+- Daha sıcak ve sevimli hayvan-dostu arayüz
+- Kaynaklı Can Bilgisi kartları ve güvenli ilk 10 dakika rehberi
+- Gönüllü beceri profili
+- Mama / su topluluk noktaları
+- Vaka zaman çizelgesi
+- Yaklaşık / tam olay konumu görünürlüğü
+- Mükerrer çağrı uyarısı
+- Opt-in akıllı push bildirimleri ve kişiselleştirilebilir filtreler
+
+Backend değişiklikleri `database/COMMUNITY_FEATURES_V1_3.sql` dosyasındadır ve production'a uygulanmadan önce ayrı Neon preview branch üzerinde test edilir.
