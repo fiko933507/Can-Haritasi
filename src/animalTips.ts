@@ -84,5 +84,5 @@ export const ANIMAL_TIPS: AnimalTip[] = [
 
 export function tipOfTheDay(date = new Date()) {
   const stamp = Number(String(date.getFullYear()) + String(date.getMonth() + 1).padStart(2, '0') + String(date.getDate()).padStart(2, '0'));
-  return ANIMAL_TIPS[stamp % ANIMAL_TIPS.length];
+  return ANIMAL_TIPS[stamp % ANIMAL_TIPS.length]!;
 }
