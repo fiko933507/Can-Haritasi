@@ -61,6 +61,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install push notifications
+        run: npx expo install expo-notifications
+
       - name: Align Expo SDK dependencies
         run: npx expo install --fix
 
@@ -100,7 +103,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: can-haritasi-v1.2-email-auth-fixed-apk
+          name: can-haritasi-v1.3-community-apk
           path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
