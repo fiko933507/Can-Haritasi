@@ -92,3 +92,27 @@ export async function refreshCommunityPoint(pointId: string) {
 export async function getReportTimeline(reportId: string) {
   return rpc<TimelineEvent[]>('report_timeline', { p_report_id: reportId });
 }
+
+export type PotentialDuplicate = {
+  id: string;
+  title: string | null;
+  condition: string;
+  created_at: string;
+  distance_m: number;
+};
+
+export async function findPotentialDuplicates(input: {
+  animalType: string;
+  latitude: number;
+  longitude: number;
+  minutes?: number;
+  distanceM?: number;
+}) {
+  return rpc<PotentialDuplicate[]>('find_potential_duplicates', {
+    p_animal_type: input.animalType,
+    p_lat: input.latitude,
+    p_lon: input.longitude,
+    p_minutes: input.minutes ?? 120,
+    p_distance_m: input.distanceM ?? 250,
+  });
+}
