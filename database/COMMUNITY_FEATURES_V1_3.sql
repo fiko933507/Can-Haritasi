@@ -788,4 +788,7 @@ GRANT EXECUTE ON FUNCTION public.can_dispatch_report_notification(uuid) TO authe
 REVOKE ALL ON FUNCTION public.notification_targets_internal(uuid,text) FROM PUBLIC, anonymous, authenticated;
 GRANT EXECUTE ON FUNCTION public.notification_targets_internal(uuid,text) TO anonymous;
 
-
+REVOKE ALL ON FUNCTION public.register_push_device(text,text,double precision,double precision) FROM PUBLIC, anonymous, authenticated;
+REVOKE ALL ON FUNCTION public.disable_push_device(text) FROM PUBLIC, anonymous, authenticated;
+GRANT EXECUTE ON FUNCTION public.register_push_device(text,text,double precision,double precision) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.disable_push_device(text) TO authenticated;
