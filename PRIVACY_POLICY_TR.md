@@ -64,3 +64,7 @@ Can Haritası'nın topluluk özellikleri etkinleştirildiğinde aşağıdaki ek 
 - **Konum gizliliği:** Yardım çağrısı oluştururken kullanıcı yaklaşık veya tam konum görünürlüğünü seçebilir. Yaklaşık görünürlükte diğer kullanıcılara koordinatlar azaltılmış hassasiyetle gösterilir.
 
 Bu veriler uygulama işlevselliği, güvenli gönüllü eşleştirmesi, yakın çağrı filtreleme ve topluluk koordinasyonu amacıyla kullanılır. Reklam hedefleme veya veri satışı amacıyla kullanılmaz.
+
+### Akıllı bildirimler
+
+Akıllı bildirimler isteğe bağlıdır. Kullanıcı özelliği kendisi etkinleştirirse cihazın Expo push tokenı, işletim sistemi türü ve bildirim eşleştirmesi için yaklaşık konum (yaklaşık 100 metre hassasiyete indirgenmiş) işlenebilir. Bu veriler yalnızca kullanıcının seçtiği yarıçap, aciliyet ve hayvan türü tercihleriyle eşleşen yardım çağrılarını bildirmek için kullanılır. Push tokenları reklam veya profil çıkarma amacıyla kullanılmaz.
