@@ -116,3 +116,21 @@ export async function findPotentialDuplicates(input: {
     p_distance_m: input.distanceM ?? 250,
   });
 }
+
+export async function registerPushDevice(input: {
+  token: string;
+  platform: 'android' | 'ios';
+  latitude?: number | null;
+  longitude?: number | null;
+}) {
+  return rpc<boolean>('register_push_device', {
+    p_token: input.token,
+    p_platform: input.platform,
+    p_lat: input.latitude ?? null,
+    p_lon: input.longitude ?? null,
+  });
+}
+
+export async function disablePushDevice(token: string) {
+  return rpc<boolean>('disable_push_device', { p_token: token });
+}
