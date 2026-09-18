@@ -49,3 +49,13 @@ Sokak hayvanları, hayvan yardımı, gönüllülük, harita, yerel topluluk.
 - Gizlilik: `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/privacy`
 - Hesap silme: `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/delete-account`
 - Şartlar: `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/terms`
+
+## v1.3 öne çıkanlar
+
+- Kaynaklı, kısa ve faydalı **Can Bilgisi** kartları
+- Mama ve su noktalarını mahalle haritasında işaretleme
+- Gönüllü becerileri ve yardım kapasitesi profili
+- Vaka zaman çizelgesi ve destek durumu
+- Yaklaşık konum ile daha güvenli yardım çağrısı paylaşımı
+- Aynı bölgede kısa süre içinde açılan benzer çağrılar için mükerrer kayıt uyarısı
+- Yakınlık, aciliyet ve hayvan türüne göre akıllı bildirim tercihleri

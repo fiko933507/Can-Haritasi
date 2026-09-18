@@ -18,3 +18,16 @@
 - `PLAY_CONSOLE_FORM_CEVAPLARI_TR.md` eklendi.
 - Google Play mağaza ikonu için `store-assets/app-icon-512.png` eklendi.
 - Gerçek telefon ekran görüntülerinin yayın öncesi zorunlu olduğu açıkça işaretlendi.
+
+## 1.3.0
+
+- Arayüz daha sıcak, sevimli ve sokak hayvanı dayanışması temasına uygun hale getirildi.
+- Can Bilgisi ve kısa güvenli ilk yardım rehberi eklendi.
+- Gönüllü becerileri ve akıllı bildirim tercihleri eklendi.
+- Mama/su topluluk noktaları eklendi.
+- Vaka zaman çizelgesi eklendi.
+- Yardım çağrılarında yaklaşık/tam konum görünürlüğü seçeneği eklendi.
+- Mükerrer çağrı uyarısı eklendi.
+- Neon Auth mobil oturum cookie uyumluluğu korundu.
+
+- İsteğe bağlı akıllı push bildirim altyapısı ve cihaz izin akışı eklendi.

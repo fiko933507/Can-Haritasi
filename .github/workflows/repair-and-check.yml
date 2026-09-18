@@ -2,7 +2,7 @@ name: Repair and check source
 
 on:
   push:
-    branches: [main]
+    branches: [main, v1.3-community-cute-ui]
     paths:
       - 'App.tsx'
       - 'src/**'
@@ -11,6 +11,10 @@ on:
       - 'scripts/repair_source.py'
       - '.github/workflows/repair-and-check.yml'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write

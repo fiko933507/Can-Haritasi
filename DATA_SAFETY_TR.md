@@ -46,3 +46,18 @@ Kamera/galeri erişimi kullanıcı eylemiyle gerçekleşir. Fotoğraf eklemek is
 ## Resmi Google referansı
 
 https://support.google.com/googleplay/android-developer/answer/10787469
+
+## v1.3 için ek beyan notları
+
+Play Console Data Safety formunda v1.3 topluluk özellikleri için aşağıdaki kullanım amaçları da hesaba katılmalıdır:
+
+- Kullanıcı tarafından seçilen **gönüllü becerileri / tercihler** → Uygulama işlevselliği, hesap yönetimi ve topluluk eşleştirmesi.
+- **Bildirim tercihleri** → Uygulama işlevselliği ve kullanıcı deneyimini kişiselleştirme.
+- Kullanıcının bilinçli olarak oluşturduğu **mama/su noktası konumu** → Uygulama işlevselliği ve topluluk koordinasyonu.
+- **Vaka olay geçmişi** → Uygulama işlevselliği, güvenlik ve moderasyon.
+
+Canlı konum sürekli izlenmez. Mama/su noktası veya yardım çağrısı konumu yalnızca kullanıcı ilgili işlemi başlattığında kaydedilir.
+
+### Bildirim verileri
+
+Akıllı bildirimler etkinse cihaz tanımlayıcısı niteliğindeki Expo push tokenı ve yaklaşık konum, uygulama işlevselliği amacıyla işlenir. Bildirim izni kullanıcı tarafından verilir; özellik izin verilmeden çalışmaz. Bildirim konumu sürekli arka plan takibiyle toplanmaz, kullanıcı bildirim özelliğini etkinleştirirken mevcut yaklaşık konum eşleştirme amacıyla kaydedilir.
