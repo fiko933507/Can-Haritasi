@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { getDownloadUrl, NearbyReport } from './backend';
 import { COLORS } from './theme';
 
@@ -106,15 +105,13 @@ export function PlayfulHome({
 
     <View style={styles.collarLocation}><View style={styles.collarBuckle}><Ionicons name="location" size={16} color={COLORS.night} /></View><Text numberOfLines={1} style={styles.locationText}>{place}</Text><Pressable accessibilityLabel="Konumu yenile" onPress={refresh} style={styles.locate}><Ionicons name="locate" size={18} color={COLORS.collar} /></Pressable></View>
 
-    <LinearGradient colors={['#12382D', '#0D291F', '#091C17']} style={styles.den}>
-      <View style={styles.denEarLeft} /><View style={styles.denEarRight} />
-      <View style={styles.denMoon}><Ionicons name="moon" size={22} color={COLORS.night} /></View>
-      <View style={styles.denPaws}><Text style={styles.mascot}>🐶</Text><Text style={[styles.mascot, styles.cat]}>🐱</Text></View>
+    <View style={styles.hero}>
+      <Image source={require('../assets/rescue-dog-cat-real.webp')} resizeMode="contain" style={styles.heroAnimals} />
       <Text style={styles.heroEyebrow}>YAKININDA BİR CAN VAR</Text>
       <Text style={styles.heroTitle}>{loading ? 'Pati izlerini\narıyoruz…' : reports.length ? `${reports.length} can sana\nyakın.` : 'Sessizliği ilk\nsen duy.'}</Text>
       <Text style={styles.heroBody}>Bir canı görünür kıl. Mahallendeki iyilik halkasına katıl.</Text>
       <BoneButton label="Yardım bildir" onPress={goReport} />
-    </LinearGradient>
+    </View>
 
     <View style={styles.bowls}>
       <BowlStat icon="heart" value={reports.length} label="yakın çağrı" tone={COLORS.coral} />
@@ -148,16 +145,11 @@ const styles = StyleSheet.create({
   collarBuckle: { width: 41, height: 41, borderRadius: 21, backgroundColor: COLORS.collar, alignItems: 'center', justifyContent: 'center' },
   locationText: { flex: 1, marginHorizontal: 10, fontSize: 10, color: COLORS.moon, fontWeight: '800' },
   locate: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#173C31' },
-  den: { minHeight: 375, borderTopLeftRadius: 180, borderTopRightRadius: 180, borderBottomLeftRadius: 70, borderBottomRightRadius: 70, paddingHorizontal: 27, paddingTop: 58, paddingBottom: 28, overflow: 'hidden', borderWidth: 2, borderColor: '#245143' },
-  denEarLeft: { position: 'absolute', width: 78, height: 105, borderTopLeftRadius: 55, borderTopRightRadius: 55, backgroundColor: '#12382D', left: 35, top: -25, transform: [{ rotate: '-18deg' }] },
-  denEarRight: { position: 'absolute', width: 78, height: 105, borderTopLeftRadius: 55, borderTopRightRadius: 55, backgroundColor: '#12382D', right: 35, top: -25, transform: [{ rotate: '18deg' }] },
-  denMoon: { position: 'absolute', right: 27, top: 35, width: 49, height: 49, borderRadius: 25, backgroundColor: COLORS.apricot, alignItems: 'center', justifyContent: 'center' },
-  denPaws: { position: 'absolute', right: 15, bottom: 68, width: 135, height: 130 },
-  mascot: { position: 'absolute', fontSize: 73, right: 25, top: 0 },
-  cat: { fontSize: 55, right: 0, top: 67 },
+  hero: { minHeight: 345, paddingTop: 28, paddingBottom: 18, overflow: 'visible' },
+  heroAnimals: { position: 'absolute', width: 155, height: 244, right: -5, bottom: 12 },
   heroEyebrow: { color: COLORS.collar, fontSize: 10, fontWeight: '900', letterSpacing: 1.6 },
-  heroTitle: { color: COLORS.moon, fontSize: 36, lineHeight: 40, fontWeight: '900', letterSpacing: -1.3, marginTop: 10, maxWidth: '75%' },
-  heroBody: { color: COLORS.muted, fontSize: 12, lineHeight: 18, marginTop: 11, maxWidth: '64%' },
+  heroTitle: { color: COLORS.moon, fontSize: 34, lineHeight: 40, fontWeight: '900', letterSpacing: -1.2, marginTop: 10, width: '54%' },
+  heroBody: { color: COLORS.muted, fontSize: 12, lineHeight: 18, marginTop: 12, width: '52%' },
   boneWrap: { alignSelf: 'flex-start', marginTop: 25, minWidth: 176, height: 56, justifyContent: 'center' },
   boneWrapCompact: { minWidth: 200 },
   boneCore: { zIndex: 2, height: 48, borderRadius: 24, paddingHorizontal: 22, backgroundColor: COLORS.apricot, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
