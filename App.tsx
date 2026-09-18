@@ -505,10 +505,30 @@ function AppInner() {
   useEffect(() => {
     if (!session?.user) { setProfile(undefined); return; }
     let mounted = true;
-    ensureProfile(session.user.name)
-      .then(() => getMyProfile())
-      .then(value => { if (mounted) setProfile(value); })
-      .catch(error => { if (mounted) { setProfile(null); Alert.alert('Profil alınamadı', error instanceof Error ? error.message : 'Tekrar dene.'); } });
+    setProfile(undefined);
+    const loadProfile = async () => {
+      const delays = [0, 450, 1000, 1800] as const;
+      let lastError: unknown = null;
+      for (const delay of delays) {
+        if (!mounted) return;
+        if (delay) await new Promise(resolve => setTimeout(resolve, delay));
+        try {
+          await ensureProfile(session.user.name);
+          const value = await getMyProfile();
+          if (mounted) setProfile(value);
+          return;
+        } catch (error) {
+          lastError = error;
+          const message = error instanceof Error ? error.message : String(error);
+          if (!/authentication required|unauthorized|not authenticated|session|jwt|token/i.test(message)) break;
+        }
+      }
+      if (mounted) {
+        setProfile(null);
+        Alert.alert('Profil alınamadı', lastError instanceof Error ? lastError.message : 'Tekrar dene.');
+      }
+    };
+    loadProfile().catch(() => undefined);
     return () => { mounted = false; };
   }, [session?.user]);
 
