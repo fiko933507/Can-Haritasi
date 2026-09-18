@@ -5,7 +5,7 @@
     "scheme": "canharitasi",
     "version": "1.4.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "plugins": [
       [
         "expo-location",
@@ -47,7 +47,10 @@
         "ACCESS_FINE_LOCATION",
         "CAMERA"
       ],
-      "versionCode": 4
+      "versionCode": 4,
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "ios": {
       "bundleIdentifier": "com.fiel.canharitasi",
@@ -61,7 +64,7 @@
     },
     "newArchEnabled": true,
     "owner": "fiko93",
-    "backgroundColor": "#FFF8EF",
+    "backgroundColor": "#071612",
     "icon": "./assets/icon.png",
     "extra": {
       "eas": {
