@@ -108,7 +108,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: can-haritasi-v1.3-community-apk
+          name: can-haritasi-v1.3.1-bluefield-test-apk
           path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
