@@ -3,7 +3,7 @@
     "name": "Can Haritası",
     "slug": "can-haritasi",
     "scheme": "canharitasi",
-    "version": "1.3.0",
+    "version": "1.3.1",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "plugins": [
@@ -31,7 +31,7 @@
       [
         "expo-notifications",
         {
-          "color": "#F47B63",
+          "color": "#2F6BFF",
           "defaultChannel": "nearby-help"
         }
       ]
@@ -40,14 +40,14 @@
       "package": "com.fiel.canharitasi",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#285247"
+        "backgroundColor": "#0B1F33"
       },
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "CAMERA"
       ],
-      "versionCode": 2
+      "versionCode": 3
     },
     "ios": {
       "bundleIdentifier": "com.fiel.canharitasi",
@@ -61,7 +61,7 @@
     },
     "newArchEnabled": true,
     "owner": "fiko93",
-    "backgroundColor": "#FFF9F0",
+    "backgroundColor": "#F4F7FB",
     "icon": "./assets/icon.png",
     "extra": {
       "eas": {
