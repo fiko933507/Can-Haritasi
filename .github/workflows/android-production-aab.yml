@@ -1,0 +1,134 @@
+name: Android production AAB
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/android-production-aab.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-aab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify source
+        run: |
+          npx expo install --check
+          npm run typecheck
+
+      - name: Generate Android project
+        env:
+          CI: '1'
+        run: npx expo prebuild --platform android --clean
+
+      - name: Create production upload key
+        shell: bash
+        run: |
+          mkdir -p release-output
+          STORE_PASSWORD="$(openssl rand -hex 24)"
+          KEY_PASSWORD="$(openssl rand -hex 24)"
+          echo "::add-mask::$STORE_PASSWORD"
+          echo "::add-mask::$KEY_PASSWORD"
+          keytool -genkeypair -noprompt             -keystore release-output/can-haritasi-upload.jks             -storetype JKS             -alias can-haritasi-upload             -keyalg RSA             -keysize 2048             -validity 10000             -storepass "$STORE_PASSWORD"             -keypass "$KEY_PASSWORD"             -dname "CN=Can Haritasi, OU=Mobile, O=Fiel, L=Istanbul, C=TR"
+          {
+            echo "Keystore: can-haritasi-upload.jks"
+            echo "Alias: can-haritasi-upload"
+            echo "Store password: $STORE_PASSWORD"
+            echo "Key password: $KEY_PASSWORD"
+            echo "Package: com.fiel.canharitasi"
+          } > release-output/UPLOAD-KEY-CREDENTIALS.txt
+          {
+            echo "CH_KEYSTORE_PATH=$GITHUB_WORKSPACE/release-output/can-haritasi-upload.jks"
+            echo "CH_STORE_PASSWORD=$STORE_PASSWORD"
+            echo "CH_KEY_ALIAS=can-haritasi-upload"
+            echo "CH_KEY_PASSWORD=$KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
+
+      - name: Configure release signing
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/build.gradle")
+          s = p.read_text(encoding="utf-8")
+          debug_block = """    signingConfigs {
+                  debug {
+                      storeFile file('debug.keystore')
+                      storePassword 'android'
+                      keyAlias 'androiddebugkey'
+                      keyPassword 'android'
+                  }
+              }"""
+          signed_block = """    signingConfigs {
+                  debug {
+                      storeFile file('debug.keystore')
+                      storePassword 'android'
+                      keyAlias 'androiddebugkey'
+                      keyPassword 'android'
+                  }
+                  release {
+                      storeFile file(System.getenv('CH_KEYSTORE_PATH'))
+                      storePassword System.getenv('CH_STORE_PASSWORD')
+                      keyAlias System.getenv('CH_KEY_ALIAS')
+                      keyPassword System.getenv('CH_KEY_PASSWORD')
+                  }
+              }"""
+          if debug_block not in s:
+              raise SystemExit("Expected signingConfigs block not found")
+          s = s.replace(debug_block, signed_block, 1)
+          marker = """        release {
+                      // Caution! In production, you need to generate your own keystore file.
+                      // see https://reactnative.dev/docs/signed-apk-android.
+                      signingConfig signingConfigs.debug"""
+          replacement = """        release {
+                      signingConfig signingConfigs.release"""
+          if marker not in s:
+              raise SystemExit("Expected release signing marker not found")
+          p.write_text(s.replace(marker, replacement, 1), encoding="utf-8")
+          PY
+
+      - name: Build signed production AAB
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew bundleRelease --no-daemon
+
+      - name: Verify AAB and archive release files
+        shell: bash
+        run: |
+          cp android/app/build/outputs/bundle/release/app-release.aab release-output/Can-Haritasi-v1.4-production.aab
+          jarsigner -verify release-output/Can-Haritasi-v1.4-production.aab
+          keytool -list             -keystore release-output/can-haritasi-upload.jks             -storepass "$CH_STORE_PASSWORD"             -alias "$CH_KEY_ALIAS"             -rfc > release-output/UPLOAD-KEY-CERTIFICATE.pem
+          sha256sum release-output/Can-Haritasi-v1.4-production.aab > release-output/SHA256SUMS.txt
+          test -s release-output/Can-Haritasi-v1.4-production.aab
+
+      - name: Upload production package
+        uses: actions/upload-artifact@v4
+        with:
+          name: can-haritasi-v1.4-production-aab-and-upload-key
+          path: release-output/
+          if-no-files-found: error
+          retention-days: 14
