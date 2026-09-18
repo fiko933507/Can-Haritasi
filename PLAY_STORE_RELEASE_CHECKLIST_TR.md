@@ -1,4 +1,4 @@
-# Can Haritası v1.2.0 — Google Play yayın kontrol listesi
+# Can Haritası v1.3.0 — Google Play yayın kontrol listesi
 
 ## Kod / backend
 
@@ -16,7 +16,11 @@
 - [x] EAS production profili `app-bundle`
 - [x] 1024×1024 uygulama ikonu
 - [x] 1024×500 feature graphic
-- [ ] Ana Neon branch'ine test edilmiş Play Store politika migrasyonu uygulanacak (kullanıcı onayı bekleniyor)
+- [x] Ana Neon branch'ine v1.2 Play Store politika migrasyonu uygulandı
+- [x] Ana Neon branch'ine v1.3 topluluk migrasyonu uygulandı
+- [x] Production `notify` Function deploy edildi
+- [x] Production `legal` Function v1.3 veri kullanımıyla güncellendi
+- [x] Web hesap silme e-posta doğrulaması production'da test edildi
 
 ## Zorunlu son cihaz testi
 
@@ -36,6 +40,11 @@
 - [ ] Web hesap silme formu
 - [ ] Gizlilik/Şartlar bağlantıları
 - [ ] Soğuk açılış ve yeniden giriş
+- [ ] Akıllı bildirim opt-in testi
+- [ ] Mama / su noktası ekle-yenile testi
+- [ ] Yaklaşık / tam konum görünürlüğü testi
+- [ ] Mükerrer çağrı uyarısı testi
+- [ ] Vaka geçmişi testi
 
 ## Play Console
 
