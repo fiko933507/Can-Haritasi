@@ -112,7 +112,8 @@ export async function rpc<T>(name: string, body: RpcBody = {}) {
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < retryDelays.length; attempt += 1) {
-    if (retryDelays[attempt]) await wait(retryDelays[attempt]);
+    const retryDelay = retryDelays[attempt] ?? 0;
+    if (retryDelay) await wait(retryDelay);
     const token = await accessToken();
     const response = await fetch(`${NEON_DATA_API_URL}/rpc/${name}`, {
       method: 'POST',
