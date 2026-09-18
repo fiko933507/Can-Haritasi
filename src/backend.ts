@@ -71,12 +71,25 @@ export type CreatedReport = {
 
 type RpcBody = Record<string, unknown>;
 
+const AUTH_RETRY_DELAYS = [0, 180, 420, 850, 1500] as const;
+
+function wait(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function isTransientAuthError(message: string) {
+  return /authentication required|unauthorized|not authenticated|session|jwt|token/i.test(message);
+}
+
 async function accessToken() {
-  const { data, error } = await authClient.token();
-  if (error || !data?.token) {
-    throw new Error(error?.message || 'Oturum anahtarı alınamadı. Lütfen tekrar giriş yap.');
+  let lastMessage = 'Oturum anahtarı alınamadı. Lütfen tekrar giriş yap.';
+  for (const delay of AUTH_RETRY_DELAYS) {
+    if (delay) await wait(delay);
+    const { data, error } = await authClient.token();
+    if (!error && data?.token) return data.token;
+    lastMessage = error?.message || lastMessage;
   }
-  return data.token;
+  throw new Error(lastMessage);
 }
 
 async function parseResponse<T>(response: Response): Promise<T> {
@@ -95,17 +108,33 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 export async function rpc<T>(name: string, body: RpcBody = {}) {
-  const token = await accessToken();
-  const response = await fetch(`${NEON_DATA_API_URL}/rpc/${name}`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-  return parseResponse<T>(response);
+  const retryDelays = [0, 300, 700, 1400] as const;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < retryDelays.length; attempt += 1) {
+    if (retryDelays[attempt]) await wait(retryDelays[attempt]);
+    const token = await accessToken();
+    const response = await fetch(`${NEON_DATA_API_URL}/rpc/${name}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    try {
+      return await parseResponse<T>(response);
+    } catch (error) {
+      const normalized = error instanceof Error ? error : new Error(String(error));
+      lastError = normalized;
+      if (attempt < retryDelays.length - 1 && isTransientAuthError(normalized.message)) continue;
+      throw normalized;
+    }
+  }
+
+  throw lastError || new Error('Oturum doğrulanamadı. Lütfen tekrar dene.');
 }
 
 export async function ensureProfile(displayName?: string | null, city?: string | null, district?: string | null) {
