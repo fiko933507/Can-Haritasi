@@ -181,7 +181,183 @@ DECLARE
   v_email text := lower(trim(p_email));
   v_auth_user_id text;
 BEGIN
-  IF v_email IS NULL OR length(v_email) < 5 OR length(v_email) > 254 OR v_email !~ '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$' THEN
+  IF v_email IS NULL OR length(v_email) < 5 OR length(v_email) > 254 OR v_email !~ '^[^@[:space:]]+@[^@[:space:]]+[.][^@[:space:]]+ THEN
+    RAISE EXCEPTION 'invalid email' USING ERRCODE='22023';
+  END IF;
+
+  SELECT id::text INTO v_auth_user_id FROM neon_auth."user" WHERE lower(email)=v_email LIMIT 1;
+
+  -- Return success without creating a row when no account exists, preventing account enumeration and request-table spam.
+  IF v_auth_user_id IS NULL THEN
+    RETURN true;
+  END IF;
+
+  UPDATE public.account_deletion_requests
+    SET reason = COALESCE(NULLIF(left(trim(p_reason),1000),''), reason),
+        requested_at = now(),
+        auth_user_id = COALESCE(v_auth_user_id, auth_user_id),
+        requested_via = 'web'
+  WHERE lower(email)=v_email AND status IN ('pending','processing');
+
+  IF NOT FOUND THEN
+    INSERT INTO public.account_deletion_requests(auth_user_id,email,reason,requested_via)
+    VALUES(v_auth_user_id,v_email,NULLIF(left(trim(p_reason),1000),''),'web');
+  END IF;
+
+  -- Deliberately do not reveal whether the email maps to an account.
+  RETURN true;
+END
+$function$;
+
+CREATE OR REPLACE FUNCTION public.create_animal_report(
+  p_animal_type text,
+  p_category text,
+  p_condition text,
+  p_urgency smallint,
+  p_title text,
+  p_description text,
+  p_lat double precision,
+  p_lon double precision,
+  p_accuracy_m integer DEFAULT NULL,
+  p_city text DEFAULT NULL,
+  p_district text DEFAULT NULL
+)
+RETURNS public.animal_reports
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public', 'auth', 'pg_temp'
+AS $function$
+DECLARE
+  v_auth_user_id text := auth.user_id();
+  v_profile_id uuid;
+  v_terms_version text;
+  v_terms_accepted_at timestamptz;
+  v_report public.animal_reports;
+BEGIN
+  IF v_auth_user_id IS NULL OR v_auth_user_id = '' THEN
+    RAISE EXCEPTION 'authentication required' USING ERRCODE='42501';
+  END IF;
+  IF p_lat NOT BETWEEN -90 AND 90 OR p_lon NOT BETWEEN -180 AND 180 THEN
+    RAISE EXCEPTION 'invalid coordinates' USING ERRCODE='22023';
+  END IF;
+  IF p_urgency NOT BETWEEN 1 AND 5 THEN
+    RAISE EXCEPTION 'urgency must be between 1 and 5' USING ERRCODE='22023';
+  END IF;
+
+  SELECT id, terms_version, terms_accepted_at
+  INTO v_profile_id, v_terms_version, v_terms_accepted_at
+  FROM public.profiles WHERE auth_user_id=v_auth_user_id;
+
+  IF v_profile_id IS NULL THEN
+    RAISE EXCEPTION 'profile required' USING ERRCODE='42501';
+  END IF;
+  IF v_terms_accepted_at IS NULL OR v_terms_version IS DISTINCT FROM '2026-09-13' THEN
+    RAISE EXCEPTION 'current terms must be accepted before publishing' USING ERRCODE='42501';
+  END IF;
+
+  INSERT INTO public.animal_reports(
+    reporter_id, animal_type, category, condition, urgency, title, description,
+    location, location_accuracy_m, city, district
+  ) VALUES (
+    v_profile_id,
+    left(trim(p_animal_type),40),
+    NULLIF(left(trim(p_category),80),''),
+    left(trim(p_condition),80),
+    p_urgency,
+    NULLIF(left(trim(p_title),140),''),
+    NULLIF(left(trim(p_description),2000),''),
+    ST_SetSRID(ST_MakePoint(p_lon,p_lat),4326)::geography,
+    CASE WHEN p_accuracy_m IS NULL THEN NULL ELSE greatest(0,least(p_accuracy_m,10000)) END,
+    NULLIF(left(trim(p_city),80),''),
+    NULLIF(left(trim(p_district),80),'')
+  ) RETURNING * INTO v_report;
+
+  RETURN v_report;
+END
+$function$;
+
+CREATE OR REPLACE FUNCTION public.nearby_reports_v3(
+  p_lat double precision,
+  p_lon double precision,
+  p_radius_m integer DEFAULT 5000,
+  p_limit integer DEFAULT 50
+)
+RETURNS TABLE(
+  id uuid,
+  animal_type character varying,
+  category character varying,
+  condition character varying,
+  urgency smallint,
+  title character varying,
+  description text,
+  latitude double precision,
+  longitude double precision,
+  distance_m double precision,
+  city character varying,
+  district character varying,
+  status character varying,
+  created_at timestamptz,
+  image_key text
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path TO 'public', 'auth', 'pg_temp'
+AS $function$
+DECLARE
+  v_auth_user_id text := auth.user_id();
+  v_profile_id uuid;
+BEGIN
+  IF v_auth_user_id IS NULL OR v_auth_user_id='' THEN
+    RAISE EXCEPTION 'authentication required' USING ERRCODE='42501';
+  END IF;
+  IF p_lat NOT BETWEEN -90 AND 90 OR p_lon NOT BETWEEN -180 AND 180 THEN
+    RAISE EXCEPTION 'invalid coordinates' USING ERRCODE='22023';
+  END IF;
+
+  SELECT p.id INTO v_profile_id FROM public.profiles p WHERE p.auth_user_id=v_auth_user_id;
+
+  RETURN QUERY
+  SELECT r.id,r.animal_type,r.category,r.condition,r.urgency,r.title,r.description,
+         ST_Y(r.location::geometry),ST_X(r.location::geometry),
+         ST_Distance(r.location,ST_SetSRID(ST_MakePoint(p_lon,p_lat),4326)::geography),
+         r.city,r.district,r.status,r.created_at,
+         (SELECT ri.storage_key FROM public.report_images ri WHERE ri.report_id=r.id ORDER BY ri.created_at ASC LIMIT 1)
+  FROM public.animal_reports r
+  WHERE r.is_public=true
+    AND r.status IN ('open','in_progress')
+    AND ST_DWithin(r.location,ST_SetSRID(ST_MakePoint(p_lon,p_lat),4326)::geography,greatest(100,least(p_radius_m,50000)))
+    AND (v_profile_id IS NULL OR NOT EXISTS (
+      SELECT 1 FROM public.blocked_users bu
+      WHERE (bu.blocker_id=v_profile_id AND bu.blocked_id=r.reporter_id)
+         OR (bu.blocker_id=r.reporter_id AND bu.blocked_id=v_profile_id)
+    ))
+  ORDER BY r.urgency DESC,
+           r.location <-> ST_SetSRID(ST_MakePoint(p_lon,p_lat),4326)::geography,
+           r.created_at DESC
+  LIMIT greatest(1,least(p_limit,100));
+END
+$function$;
+
+REVOKE ALL ON TABLE public.blocked_users FROM anonymous, authenticated;
+REVOKE ALL ON TABLE public.account_deletion_requests FROM anonymous, authenticated;
+
+REVOKE ALL ON FUNCTION public.accept_terms(text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.report_content(uuid,text,text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.block_report_author(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.request_my_account_deletion(text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.request_account_deletion_by_email(text,text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.nearby_reports_v3(double precision,double precision,integer,integer) FROM PUBLIC;
+
+GRANT EXECUTE ON FUNCTION public.accept_terms(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.report_content(uuid,text,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.block_report_author(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.request_my_account_deletion(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.nearby_reports_v3(double precision,double precision,integer,integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.request_account_deletion_by_email(text,text) TO anonymous, authenticated;
+
+COMMIT;
+ THEN
     RAISE EXCEPTION 'invalid email' USING ERRCODE='22023';
   END IF;
 
