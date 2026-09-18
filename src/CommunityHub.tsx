@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Linking,
   Pressable,
   ScrollView,
@@ -12,7 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ANIMAL_TIPS, tipOfTheDay } from './animalTips';
+import { tipDeckForDay, tipOfTheDay } from './animalTips';
 import {
   addCommunityPoint,
   CommunityPoint,
@@ -63,7 +64,7 @@ const VOLUNTEER_ITEMS: { key: keyof Omit<VolunteerPreferences, 'updated_at'>; la
 
 function ToggleCard({ active, icon, label, onPress }: { active: boolean; icon: IconName; label: string; onPress: () => void }) {
   return <Pressable onPress={onPress} style={[styles.toggleCard, active && styles.toggleCardActive]}>
-    <View style={[styles.toggleIcon, active && styles.toggleIconActive]}><Ionicons name={icon} size={20} color={active ? '#fff' : COLORS.forest} /></View>
+    <View style={[styles.toggleIcon, active && styles.toggleIconActive]}><Ionicons name={icon} size={20} color={active ? COLORS.night : COLORS.forest} /></View>
     <Text style={[styles.toggleLabel, active && styles.toggleLabelActive]}>{label}</Text>
     <Ionicons name={active ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={active ? COLORS.success : '#A2ADA7'} />
   </Pressable>;
@@ -94,7 +95,9 @@ function niceDistance(meters: number) {
 }
 
 export function CommunityHub({ position, reportCount }: { position: PositionLike; reportCount: number }) {
-  const daily = useMemo(() => tipOfTheDay(), []);
+  const [dayClock, setDayClock] = useState(() => Date.now());
+  const daily = useMemo(() => tipOfTheDay(new Date(dayClock)), [dayClock]);
+  const dailyDeck = useMemo(() => tipDeckForDay(new Date(dayClock), 6), [dayClock]);
   const [volunteer, setVolunteer] = useState<VolunteerPreferences>(DEFAULT_VOLUNTEER);
   const [notifications, setNotifications] = useState<NotificationPreferences>(DEFAULT_NOTIFICATIONS);
   const [points, setPoints] = useState<CommunityPoint[]>([]);
@@ -106,6 +109,11 @@ export function CommunityHub({ position, reportCount }: { position: PositionLike
   const [enablingPush, setEnablingPush] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [backendReady, setBackendReady] = useState(true);
+
+  useEffect(() => {
+    const timer = setInterval(() => setDayClock(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -203,18 +211,19 @@ export function CommunityHub({ position, reportCount }: { position: PositionLike
   };
 
   return <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.page}>
-    <LinearGradient colors={[COLORS.coralSoft, COLORS.butter, COLORS.mint]} style={styles.hero}>
+    <LinearGradient colors={['#102A24', '#0D211C', '#091915']} style={styles.hero}>
       <View style={styles.heroBubbleOne} /><View style={styles.heroBubbleTwo} />
+      <Image source={require('../assets/community-cat-real.webp')} resizeMode="contain" style={styles.heroAnimal} />
       <View style={styles.heroPaw}><Ionicons name="paw" size={30} color="#fff" /></View>
       <Text style={styles.heroEyebrow}>CAN REHBERİ & TOPLULUK</Text>
       <Text style={styles.heroTitle}>Biraz bilgi,{String.fromCharCode(10)}biraz dayanışma. 🐾</Text>
-      <Text style={styles.heroText}>Sadece çağrı görmek değil; doğru bilgiyi paylaşmak, gönüllüleri buluşturmak ve mahallendeki canlara düzenli destek olmak için.</Text>
+      <Text style={styles.heroText}>Doğru bilgiyi paylaş, gönüllülerle buluş ve mahallendeki canlara düzenli destek ol.</Text>
       <View style={styles.heroStats}><View><Text style={styles.heroStatNumber}>{reportCount}</Text><Text style={styles.heroStatLabel}>yakın çağrı</Text></View><View style={styles.heroDivider} /><View><Text style={styles.heroStatNumber}>{points.length}</Text><Text style={styles.heroStatLabel}>mama/su noktası</Text></View></View>
     </LinearGradient>
 
     {!backendReady && <View style={styles.backendNotice}><Ionicons name="cloud-offline-outline" size={20} color={COLORS.danger} /><Text style={styles.backendNoticeText}>Can Bilgileri kullanılabilir. Topluluk kayıtları için yeni backend migrasyonu henüz etkin değil veya oturum doğrulaması tamamlanmadı.</Text></View>}
 
-    <SectionTitle icon="bulb-outline" title="Bugünün Can Bilgisi" subtitle="Kısa, kaynaklı ve gerçekten işine yarayacak bilgiler" />
+    <SectionTitle icon="bulb-outline" title="Bugünün Can Bilgisi" subtitle="Her gün 00.00'da yeni, kaynaklı bir bilgi" />
     <View style={styles.tipCard}>
       <View style={styles.tipTop}><View style={styles.tipAnimal}><Text style={styles.tipAnimalText}>{daily.animal}</Text></View><View style={styles.tipCategory}><Text style={styles.tipCategoryText}>{daily.category}</Text></View></View>
       <Text style={styles.tipTitle}>{daily.title}</Text>
@@ -224,7 +233,7 @@ export function CommunityHub({ position, reportCount }: { position: PositionLike
     </View>
 
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tipRail}>
-      {ANIMAL_TIPS.filter(x => x.id !== daily.id).slice(0, 6).map(tip => <Pressable key={tip.id} onPress={() => Alert.alert(tip.title, `${tip.body}\n\nNe yapmalı? ${tip.action}`, [{ text: 'Kapat' }, { text: 'Kaynağı aç', onPress: () => openSource(tip.sourceUrl) }])} style={styles.smallTip}>
+      {dailyDeck.map(tip => <Pressable key={tip.id} onPress={() => Alert.alert(tip.title, `${tip.body}\n\nNe yapmalı? ${tip.action}`, [{ text: 'Kapat' }, { text: 'Kaynağı aç', onPress: () => openSource(tip.sourceUrl) }])} style={styles.smallTip}>
         <View style={[styles.smallTipIcon, { backgroundColor: tip.category === 'Acil' ? COLORS.coralSoft : tip.category === 'Davranış' ? COLORS.lilac : COLORS.sky }]}><Ionicons name={tip.animal === 'Kedi' ? 'paw' : tip.animal === 'Köpek' ? 'heart' : 'leaf'} size={19} color={COLORS.forest} /></View>
         <Text style={styles.smallTipMeta}>{tip.animal} • {tip.category}</Text><Text numberOfLines={3} style={styles.smallTipTitle}>{tip.title}</Text>
       </Pressable>)}
@@ -241,18 +250,19 @@ export function CommunityHub({ position, reportCount }: { position: PositionLike
       <Text style={styles.disclaimer}>Bu bölüm veteriner tanısı veya tedavisinin yerine geçmez.</Text>
     </View>
 
-    <SectionTitle icon="people-outline" title="Gönüllü rozetlerin" subtitle="Neye yardımcı olabileceğini seç; gerektiğinde doğru kişi bulunsun" />
+    <View style={styles.volunteerIntro}><Image source={require('../assets/volunteer-dog-real.webp')} resizeMode="contain" style={styles.volunteerAnimal} /><View style={{ flex: 1 }}><Text style={styles.volunteerIntroTitle}>Bir pati de sen uzat</Text><Text style={styles.volunteerIntroText}>Yapabileceklerini seç; ihtiyaç olduğunda doğru gönüllü bulunsun.</Text></View></View>
+    <SectionTitle icon="people-outline" title="Gönüllü rozetlerin" subtitle="Neye yardımcı olabileceğini seç" />
     <View style={styles.grid}>
       {VOLUNTEER_ITEMS.map(item => <ToggleCard key={item.key} icon={item.icon} label={item.label} active={Boolean(volunteer[item.key])} onPress={() => setVolunteer(v => ({ ...v, [item.key]: !v[item.key] }))} />)}
     </View>
-    <Pressable onPress={saveVolunteer} disabled={savingVolunteer} style={styles.saveButton}>{savingVolunteer ? <ActivityIndicator color="#fff" /> : <><Ionicons name="heart" size={18} color="#fff" /><Text style={styles.saveButtonText}>Gönüllü profilini kaydet</Text></>}</Pressable>
+    <Pressable onPress={saveVolunteer} disabled={savingVolunteer} style={styles.saveButton}>{savingVolunteer ? <ActivityIndicator color={COLORS.night} /> : <><Ionicons name="heart" size={18} color={COLORS.night} /><Text style={styles.saveButtonText}>Gönüllü profilini kaydet</Text></>}</Pressable>
 
     <SectionTitle icon="notifications-outline" title="Akıllı bildirim tercihleri" subtitle="Sadece ilgilenebileceğin çağrılar öne çıksın" />
     <View style={styles.settingsCard}>
       <Text style={styles.settingLabel}>Yakınlık yarıçapı</Text>
       <View style={styles.radiusRow}>{[1000, 3000, 5000, 10000].map(m => <Pressable key={m} onPress={() => setNotifications(v => ({ ...v, radius_m: m }))} style={[styles.radiusPill, notifications.radius_m === m && styles.radiusPillActive]}><Text style={[styles.radiusText, notifications.radius_m === m && styles.radiusTextActive]}>{m < 1000 ? m + ' m' : m / 1000 + ' km'}</Text></Pressable>)}</View>
       <ToggleCard active={notifications.urgent_only} icon="alert-circle-outline" label="Yalnızca yüksek öncelikli çağrılar" onPress={() => setNotifications(v => ({ ...v, urgent_only: !v.urgent_only }))} />
-      <View style={styles.speciesRow}><Pressable onPress={() => setNotifications(v => ({ ...v, cats: !v.cats }))} style={[styles.speciesPill, notifications.cats && styles.speciesPillActive]}><Ionicons name="paw" size={17} color={notifications.cats ? '#fff' : COLORS.forest} /><Text style={[styles.speciesText, notifications.cats && { color: '#fff' }]}>Kedi</Text></Pressable><Pressable onPress={() => setNotifications(v => ({ ...v, dogs: !v.dogs }))} style={[styles.speciesPill, notifications.dogs && styles.speciesPillActive]}><Ionicons name="heart" size={17} color={notifications.dogs ? '#fff' : COLORS.forest} /><Text style={[styles.speciesText, notifications.dogs && { color: '#fff' }]}>Köpek</Text></Pressable></View>
+      <View style={styles.speciesRow}><Pressable onPress={() => setNotifications(v => ({ ...v, cats: !v.cats }))} style={[styles.speciesPill, notifications.cats && styles.speciesPillActive]}><Ionicons name="paw" size={17} color={notifications.cats ? COLORS.night : COLORS.forest} /><Text style={[styles.speciesText, notifications.cats && { color: COLORS.night }]}>Kedi</Text></Pressable><Pressable onPress={() => setNotifications(v => ({ ...v, dogs: !v.dogs }))} style={[styles.speciesPill, notifications.dogs && styles.speciesPillActive]}><Ionicons name="heart" size={17} color={notifications.dogs ? COLORS.night : COLORS.forest} /><Text style={[styles.speciesText, notifications.dogs && { color: COLORS.night }]}>Köpek</Text></Pressable></View>
       <Pressable onPress={saveAlerts} disabled={savingNotifications} style={styles.secondarySave}>{savingNotifications ? <ActivityIndicator color={COLORS.forest} /> : <Text style={styles.secondarySaveText}>Tercihleri kaydet</Text>}</Pressable>
       <Pressable onPress={enablePush} disabled={enablingPush || pushEnabled} style={[styles.pushButton, pushEnabled && styles.pushButtonDone]}>{enablingPush ? <ActivityIndicator color="#fff" /> : <><Ionicons name={pushEnabled ? "checkmark-circle" : "notifications"} size={18} color="#fff" /><Text style={styles.pushButtonText}>{pushEnabled ? 'Bildirimler etkin' : 'Cihaz bildirimlerini etkinleştir'}</Text></>}</Pressable>
     </View>
@@ -272,19 +282,20 @@ export function CommunityHub({ position, reportCount }: { position: PositionLike
 
 const styles = StyleSheet.create({
   page: { padding: 18, paddingBottom: 42, backgroundColor: COLORS.cream },
-  hero: { borderTopLeftRadius: 150, borderTopRightRadius: 150, borderBottomLeftRadius: 58, borderBottomRightRadius: 58, padding: 28, paddingTop: 48, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.line },
-  heroBubbleOne: { position: 'absolute', width: 170, height: 170, borderRadius: 85, right: -55, top: -70, backgroundColor: 'rgba(255,255,255,.35)' },
-  heroBubbleTwo: { position: 'absolute', width: 110, height: 110, borderRadius: 55, left: -38, bottom: -55, backgroundColor: 'rgba(255,255,255,.28)' },
+  hero: { minHeight: 330, borderRadius: 0, padding: 23, paddingTop: 32, overflow: 'hidden', borderLeftWidth: 3, borderLeftColor: COLORS.coral },
+  heroBubbleOne: { display: 'none' },
+  heroBubbleTwo: { display: 'none' },
+  heroAnimal: { position: 'absolute', width: 145, height: 250, right: -8, bottom: -8 },
   heroPaw: { width: 58, height: 58, borderRadius: 29, backgroundColor: COLORS.coral, alignItems: 'center', justifyContent: 'center', marginBottom: 15 },
   heroEyebrow: { fontSize: 10, letterSpacing: 1.4, fontWeight: '900', color: COLORS.coral },
   heroTitle: { fontSize: 30, lineHeight: 35, fontWeight: '900', color: COLORS.forestDark, letterSpacing: -.8, marginTop: 7 },
-  heroText: { color: '#5D716A', fontSize: 12, lineHeight: 19, marginTop: 10, maxWidth: '95%' },
+  heroText: { color: COLORS.muted, fontSize: 12, lineHeight: 19, marginTop: 10, maxWidth: '56%' },
   heroStats: { marginTop: 18, flexDirection: 'row', alignItems: 'center', gap: 18 },
   heroStatNumber: { fontSize: 23, fontWeight: '900', color: COLORS.forest },
   heroStatLabel: { fontSize: 9, color: COLORS.muted, fontWeight: '700' },
   heroDivider: { width: 1, height: 32, backgroundColor: '#DCCFC1' },
-  backendNotice: { marginTop: 14, padding: 13, borderRadius: 16, backgroundColor: '#FFF0ED', flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  backendNoticeText: { flex: 1, fontSize: 10, lineHeight: 15, color: '#8B5149' },
+  backendNotice: { marginTop: 14, padding: 13, borderRadius: 16, backgroundColor: '#2E211F', flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  backendNoticeText: { flex: 1, fontSize: 10, lineHeight: 15, color: '#D9A49C' },
   sectionTitleRow: { flexDirection: 'row', gap: 11, alignItems: 'center', marginTop: 28, marginBottom: 12 },
   sectionIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.coralSoft, alignItems: 'center', justifyContent: 'center' },
   sectionTitle: { fontSize: 19, fontWeight: '900', color: COLORS.forestDark },
@@ -315,27 +326,31 @@ const styles = StyleSheet.create({
   disclaimer: { marginTop: 10, fontSize: 9, color: '#8B756A', fontStyle: 'italic' },
   grid: { gap: 8 },
   toggleCard: { minHeight: 58, backgroundColor: COLORS.paper, borderRadius: 29, borderWidth: 1, borderColor: COLORS.line, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  toggleCardActive: { backgroundColor: COLORS.mint, borderColor: '#CDE4D8' },
+  toggleCardActive: { backgroundColor: '#17382F', borderColor: COLORS.collar },
   toggleIcon: { width: 36, height: 36, borderRadius: 13, backgroundColor: COLORS.sage, alignItems: 'center', justifyContent: 'center' },
-  toggleIconActive: { backgroundColor: COLORS.forest },
+  toggleIconActive: { backgroundColor: COLORS.collar },
   toggleLabel: { flex: 1, fontSize: 11, fontWeight: '800', color: COLORS.forest },
   toggleLabelActive: { color: COLORS.forestDark },
-  saveButton: { marginTop: 10, height: 52, borderRadius: 17, backgroundColor: COLORS.coral, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
-  saveButtonText: { color: '#fff', fontWeight: '900', fontSize: 12 },
+  volunteerIntro: { minHeight: 128, marginTop: 24, backgroundColor: '#0D211C', borderLeftWidth: 3, borderLeftColor: COLORS.collar, padding: 18, paddingLeft: 126, justifyContent: 'center', overflow: 'hidden' },
+  volunteerAnimal: { position: 'absolute', width: 110, height: 150, left: 5, bottom: -18 },
+  volunteerIntroTitle: { color: COLORS.forestDark, fontSize: 18, fontWeight: '900' },
+  volunteerIntroText: { color: COLORS.muted, fontSize: 10, lineHeight: 15, marginTop: 5 },
+  saveButton: { marginTop: 10, height: 52, borderRadius: 8, backgroundColor: COLORS.coral, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
+  saveButtonText: { color: COLORS.night, fontWeight: '900', fontSize: 12 },
   settingsCard: { backgroundColor: COLORS.paper, borderRadius: 42, borderWidth: 1, borderColor: COLORS.line, padding: 19, gap: 9 },
   settingLabel: { fontSize: 10, fontWeight: '900', color: COLORS.forest },
   radiusRow: { flexDirection: 'row', gap: 7, flexWrap: 'wrap', marginBottom: 3 },
   radiusPill: { paddingHorizontal: 13, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: COLORS.line, backgroundColor: COLORS.cream },
-  radiusPillActive: { backgroundColor: COLORS.forest, borderColor: COLORS.forest },
+  radiusPillActive: { backgroundColor: COLORS.collar, borderColor: COLORS.collar },
   radiusText: { fontSize: 10, fontWeight: '800', color: COLORS.forest },
-  radiusTextActive: { color: '#fff' },
+  radiusTextActive: { color: COLORS.night },
   speciesRow: { flexDirection: 'row', gap: 8 },
   speciesPill: { flex: 1, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', padding: 11, borderRadius: 15, backgroundColor: COLORS.cream, borderWidth: 1, borderColor: COLORS.line },
-  speciesPillActive: { backgroundColor: COLORS.coral, borderColor: COLORS.coral },
+  speciesPillActive: { backgroundColor: COLORS.collar, borderColor: COLORS.collar },
   speciesText: { color: COLORS.forest, fontWeight: '900', fontSize: 11 },
   secondarySave: { minHeight: 44, marginTop: 4, borderRadius: 14, backgroundColor: COLORS.sage, alignItems: 'center', justifyContent: 'center' },
   secondarySaveText: { color: COLORS.forest, fontWeight: '900', fontSize: 11 },
-  pushButton: { minHeight: 46, marginTop: 2, borderRadius: 14, backgroundColor: COLORS.coral, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center' },
+  pushButton: { minHeight: 46, marginTop: 2, borderRadius: 8, backgroundColor: COLORS.coral, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center' },
   pushButtonDone: { backgroundColor: COLORS.success },
   pushButtonText: { color: '#fff', fontWeight: '900', fontSize: 11 },
   pointCreate: { backgroundColor: COLORS.paper, borderRadius: 38, borderWidth: 1, borderColor: COLORS.line, padding: 16, marginBottom: 10 },

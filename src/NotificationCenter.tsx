@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   item: { backgroundColor: COLORS.paper, borderRadius: 38, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 11, borderWidth: 1, borderColor: COLORS.line, marginBottom: 9 },
   itemIcon: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   itemIconUrgent: { backgroundColor: COLORS.coral },
-  itemIconNormal: { backgroundColor: '#FFF0E1' },
+  itemIconNormal: { backgroundColor: '#2E291B' },
   itemTop: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   itemTitle: { color: COLORS.forestDark, fontSize: 11, fontWeight: '900' },
   newBadge: { borderRadius: 999, backgroundColor: '#FFE0DB', paddingHorizontal: 6, paddingVertical: 2 },
