@@ -72,42 +72,30 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+
           p = Path("android/app/build.gradle")
           s = p.read_text(encoding="utf-8")
-          debug_block = """    signingConfigs {
-                  debug {
-                      storeFile file('debug.keystore')
-                      storePassword 'android'
-                      keyAlias 'androiddebugkey'
-                      keyPassword 'android'
-                  }
-              }"""
-          signed_block = """    signingConfigs {
-                  debug {
-                      storeFile file('debug.keystore')
-                      storePassword 'android'
-                      keyAlias 'androiddebugkey'
-                      keyPassword 'android'
-                  }
-                  release {
-                      storeFile file(System.getenv('CH_KEYSTORE_PATH'))
-                      storePassword System.getenv('CH_STORE_PASSWORD')
-                      keyAlias System.getenv('CH_KEY_ALIAS')
-                      keyPassword System.getenv('CH_KEY_PASSWORD')
-                  }
-              }"""
-          if debug_block not in s:
+
+          signing_anchor = "    signingConfigs {\n        debug {"
+          release_config = """    signingConfigs {
+              release {
+                  storeFile file(System.getenv('CH_KEYSTORE_PATH'))
+                  storePassword System.getenv('CH_STORE_PASSWORD')
+                  keyAlias System.getenv('CH_KEY_ALIAS')
+                  keyPassword System.getenv('CH_KEY_PASSWORD')
+              }
+              debug {"""
+          if signing_anchor not in s:
               raise SystemExit("Expected signingConfigs block not found")
-          s = s.replace(debug_block, signed_block, 1)
-          marker = """        release {
-                      // Caution! In production, you need to generate your own keystore file.
-                      // see https://reactnative.dev/docs/signed-apk-android.
-                      signingConfig signingConfigs.debug"""
-          replacement = """        release {
-                      signingConfig signingConfigs.release"""
-          if marker not in s:
-              raise SystemExit("Expected release signing marker not found")
-          p.write_text(s.replace(marker, replacement, 1), encoding="utf-8")
+          s = s.replace(signing_anchor, release_config, 1)
+
+          build_types_at = s.index("    buildTypes {")
+          release_at = s.index("        release {", build_types_at)
+          debug_signing = "            signingConfig signingConfigs.debug"
+          signing_at = s.index(debug_signing, release_at)
+          s = s[:signing_at] + "            signingConfig signingConfigs.release" + s[signing_at + len(debug_signing):]
+
+          p.write_text(s, encoding="utf-8")
           PY
 
       - name: Build signed production AAB
