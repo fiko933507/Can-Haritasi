@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/android-production-aab.yml'
       - 'app.json'
+      - 'App.tsx'
 
 permissions:
   contents: read
@@ -113,16 +114,16 @@ jobs:
       - name: Verify AAB and archive release files
         shell: bash
         run: |
-          cp android/app/build/outputs/bundle/release/app-release.aab release-output/Can-Haritasi-v1.4.1-production.aab
-          jarsigner -verify release-output/Can-Haritasi-v1.4.1-production.aab
+          cp android/app/build/outputs/bundle/release/app-release.aab release-output/Can-Haritasi-v1.4.2-production.aab
+          jarsigner -verify release-output/Can-Haritasi-v1.4.2-production.aab
           keytool -list             -keystore release-output/can-haritasi-upload.jks             -storepass "$CH_STORE_PASSWORD"             -alias "$CH_KEY_ALIAS"             -rfc > release-output/UPLOAD-KEY-CERTIFICATE.pem
-          sha256sum release-output/Can-Haritasi-v1.4.1-production.aab > release-output/SHA256SUMS.txt
-          test -s release-output/Can-Haritasi-v1.4.1-production.aab
+          sha256sum release-output/Can-Haritasi-v1.4.2-production.aab > release-output/SHA256SUMS.txt
+          test -s release-output/Can-Haritasi-v1.4.2-production.aab
 
       - name: Upload production package
         uses: actions/upload-artifact@v4
         with:
-          name: can-haritasi-v1.4.1-code5-production-aab-and-upload-key
+          name: can-haritasi-v1.4.2-code6-production-aab-and-upload-key
           path: release-output/
           if-no-files-found: error
           retention-days: 14
