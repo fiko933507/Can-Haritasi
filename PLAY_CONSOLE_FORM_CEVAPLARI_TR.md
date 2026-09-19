@@ -1,7 +1,7 @@
 # Can Haritası — Play Console form cevapları
 
 **Paket:** com.fiel.canharitasi  
-**Sürüm:** 1.2.0  
+**Sürüm:** 1.4.1  
 **Hedef:** Google Play Android üretim yayını
 
 Bu dosya Play Console ekranlarında hangi alanın nasıl doldurulacağını tek tek gösterir.
@@ -161,3 +161,50 @@ Kişisel geliştirici hesabı **13 Kasım 2023'ten sonra oluşturulduysa**, üre
 2. **Google inceleme test hesabı:** yukarıdaki `[PLAY_REVIEW_TEST_EMAIL]` ve `[PLAY_REVIEW_TEST_PASSWORD]` yerlerine gerçekten çalışan hesap bilgileri girilmeli.
 
 Bu ikisi gerçek hesap bilgisi gerektirdiği için kaynak pakette sabitlenmemiştir.
+
+
+## 17. Reklam kimliği
+
+Play Console → **Uygulama içeriği → Reklam kimliği**
+
+- **Uygulamanız reklam kimliği kullanıyor mu?: Hayır**
+- Mevcut bağımlılıklarda reklam/AdMob SDK'sı yoktur.
+- `com.google.android.gms.permission.AD_ID` izni eklenmemelidir.
+- Reklam kimliği sürüm uyarısını kaldırmak için sonuçların anlaşıldığını belirten onay kutusu işaretlenebilir.
+
+## 18. Çocuk Güvenliği Standartları
+
+Bu bölüm, uygulama sosyal/topluluk özellikleri nedeniyle gösterildiğinde şu şekilde doldurulur:
+
+- **Güvenlik standartları URL'si:**  
+  `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/child-safety`
+- **İletişim e-postası:** `fiko3568@gmail.com`
+- **Uygulama içi bildirim mekanizması:** Evet — her çağrıda **Bildir → Çocuk güvenliği**.
+- **Yasalara uyum ve yetkili mercilere bildirim:** Evet — yayınlanan standartlar ve moderasyon runbook'u kapsamında.
+
+Göndermeden önce canlı URL'nin oturum açmadan açıldığını, uygulamadaki Bildir seçeneğinin çalıştığını ve bildirimin `abuse_reports` tablosuna `cocuk_guvenligi_csae` nedeniyle kaydedildiğini doğrula.
+
+## 19. Kullanıcı tarafından oluşturulan içerik (UGC)
+
+Can Haritası kullanıcıların çağrı metni, fotoğraf ve topluluk bilgisi yayınlamasına izin verir.
+
+- Kullanıcılar kayıt sırasında Kullanım Şartları ve Topluluk Kuralları'nı kabul eder.
+- Yasaklanan içerikler herkese açık topluluk standartlarında açıklanır.
+- Her çağrıda **Bildir** ve **Engelle** bulunur.
+- Bildirimler moderasyon kuyruğuna kaydedilir.
+- İçerik kaldırma, hesap kısıtlama/kapatma ve gerekli hukuki bildirim süreçleri vardır.
+
+Topluluk standartları URL'si:  
+`https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/community-standards`
+
+## 20. Yasal merkez URL'leri
+
+| Alan | URL |
+|---|---|
+| Gizlilik Politikası | `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/privacy` |
+| Kullanım Şartları | `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/terms` |
+| Topluluk Standartları | `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/community-standards` |
+| Çocuk Güvenliği | `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/child-safety` |
+| Veri Güvenliği Özeti | `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/data-safety` |
+| Hesap ve Veri Silme | `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/delete-account` |
+| Yasal/Güvenlik İletişimi | `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/support` |
