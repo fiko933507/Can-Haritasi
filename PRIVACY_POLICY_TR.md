@@ -1,15 +1,15 @@
 # Can Haritası — Gizlilik Politikası
 
-**Yürürlük tarihi:** 13 Eylül 2026  
-**Sürüm:** 1.1
+**Yürürlük tarihi:** 19 Eylül 2026  
+**Sürüm:** 1.2
 
 Can Haritası, yakındaki sokak hayvanı yardım çağrılarını görünür kılmak ve gönüllülerin koordinasyonunu kolaylaştırmak için tasarlanmıştır. Bu politika, Can Haritası uygulamasının kullanıcı ve cihaz verilerini nasıl işlediğini açıklar.
 
 ## Veri sorumlusu / geliştirici ve iletişim
 
-Uygulamanın yayıncısı **Can Haritası geliştiricisidir**. Gizlilik, erişim, düzeltme ve veri işleme soruları için Google Play mağaza sayfasında yayınlanan **Geliştirici iletişim e-posta adresi** kullanılabilir. Hesap ve veri silme talepleri ayrıca aşağıdaki herkese açık silme formundan gönderilebilir.
+Uygulamanın yayıncısı **Can Haritası geliştiricisidir**. Gizlilik, erişim, düzeltme ve veri işleme soruları için Google Play mağaza sayfasında yayınlanan **fiko3568@gmail.com** iletişim adresi kullanılabilir. Hesap ve veri silme talepleri ayrıca aşağıdaki herkese açık silme formundan gönderilebilir.
 
-> Play Console'a yüklemeden önce mağaza sayfasındaki destek/geliştirici e-posta adresinin doğrulanmış ve aktif olduğundan emin olun.
+> İletişim: **fiko3568@gmail.com**
 
 ## İşlenen veriler
 
@@ -68,3 +68,11 @@ Bu veriler uygulama işlevselliği, güvenli gönüllü eşleştirmesi, yakın �
 ### Akıllı bildirimler
 
 Akıllı bildirimler isteğe bağlıdır. Kullanıcı özelliği kendisi etkinleştirirse cihazın Expo push tokenı, işletim sistemi türü ve bildirim eşleştirmesi için yaklaşık konum (yaklaşık 100 metre hassasiyete indirgenmiş) işlenebilir. Bu veriler yalnızca kullanıcının seçtiği yarıçap, aciliyet ve hayvan türü tercihleriyle eşleşen yardım çağrılarını bildirmek için kullanılır. Push tokenları reklam veya profil çıkarma amacıyla kullanılmaz.
+
+
+## İlgili yasal ve güvenlik sayfaları
+
+- Topluluk Standartları: `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/community-standards`
+- Çocuk Güvenliği Standartları: `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/child-safety`
+- Veri Güvenliği Özeti: `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/data-safety`
+- Yasal/Güvenlik İletişimi: `https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/support`
