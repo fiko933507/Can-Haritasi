@@ -145,8 +145,8 @@ function AuthScreen() {
     setBusy(true);
     try {
       const result = mode === 'register'
-        ? await authClient.signUp.email({ email: normalizedEmail, password, name: name.trim() })
-        : await authClient.signIn.email({ email: normalizedEmail, password });
+        ? await authClient.signUp.email({ email: normalizedEmail, password, name: name.trim(), callbackURL: 'canharitasi://' })
+        : await authClient.signIn.email({ email: normalizedEmail, password, callbackURL: 'canharitasi://' });
       if (result.error) throw new Error(result.error.message || 'Giriş yapılamadı.');
       if (mode === 'register') { try { await acceptTerms(TERMS_VERSION); } catch { /* AppInner will request acceptance again if persistence fails. */ } }
     } catch (error) {
