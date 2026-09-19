@@ -50,7 +50,7 @@ const terms = shell('Kullanım Şartları', `
 <p>Can Haritası veterinerlik, kolluk, resmi kurtarma veya garantili acil durum hizmeti değildir. Can Bilgisi içerikleri genel bilgilendirmedir ve profesyonel veteriner tavsiyesinin yerine geçmez.</p>
 <h2>Hesap sonlandırma ve değişiklikler</h2>
 <p>Kullanıcı hesabının silinmesini isteyebilir. Ağır veya tekrarlanan ihlallerde erişim sınırlandırılabilir. Önemli şart değişikliklerinde yeni sürüm yayınlanır ve gerektiğinde uygulama içinde yeniden onay istenir.</p>
-<p><strong>Şart sürümü:</strong> 2026-09-19</p>
+<p><strong>Şart sürümü:</strong> 2026-09-13</p>
 `);
 
 const community = shell('Topluluk ve İçerik Standartları', `
