@@ -24,6 +24,8 @@ import {
   acceptTerms,
   authClient,
   blockReportAuthor,
+  CHILD_SAFETY_URL,
+  COMMUNITY_STANDARDS_URL,
   createAnimalReport,
   DELETE_ACCOUNT_URL,
   ensureProfile,
@@ -217,7 +219,36 @@ function ReportCard({ report, onHelp, onModerated }: { report: NearbyReport; onH
     finally { setBusy(false); }
   };
 
-  const reportAbuse = () => Alert.alert('Çağrıyı bildir', 'Bu çağrının Topluluk Kuralları’na aykırı, yanıltıcı veya uygunsuz olduğunu düşünüyor musun?', [{ text: 'Vazgeç', style: 'cancel' }, { text: 'Bildir', style: 'destructive', onPress: async () => { try { await reportContent(report.id); Alert.alert('Teşekkürler', 'Bildirimin inceleme kuyruğuna alındı.'); } catch (error) { Alert.alert('Bildirim gönderilemedi', error instanceof Error ? error.message : 'Tekrar dene.'); } } }]);
+  const submitAbuseReport = async (reason: string, details: string) => {
+    try {
+      await reportContent(report.id, reason, details);
+      Alert.alert(
+        reason === 'cocuk_guvenligi_csae' ? 'Öncelikli bildirim alındı' : 'Teşekkürler',
+        reason === 'cocuk_guvenligi_csae'
+          ? 'Çocuk güvenliği bildirimin öncelikli moderasyon kuyruğuna alındı. Şüpheli yasa dışı materyali indirme, kaydetme veya yeniden paylaşma.'
+          : 'Bildirimin inceleme kuyruğuna alındı.',
+      );
+    } catch (error) {
+      Alert.alert('Bildirim gönderilemedi', error instanceof Error ? error.message : 'Tekrar dene.');
+    }
+  };
+
+  const reportAbuse = () => Alert.alert(
+    'Çağrıyı bildir',
+    'Bildirim nedenini seç. Çocuk güvenliği şüphesi öncelikli olarak incelenir.',
+    [
+      { text: 'Vazgeç', style: 'cancel' },
+      {
+        text: 'Diğer ihlal',
+        onPress: () => submitAbuseReport('uygunsuz_veya_yaniltici', 'Topluluk kuralları ihlali'),
+      },
+      {
+        text: 'Çocuk güvenliği',
+        style: 'destructive',
+        onPress: () => submitAbuseReport('cocuk_guvenligi_csae', 'Çocuk güvenliği / CSAE şüphesi'),
+      },
+    ],
+  );
 
   const openTimeline = async () => {
     if (timelineBusy) return;
@@ -432,6 +463,8 @@ function ProfileScreen({ user, reportCount }: { user: { name?: string | null; em
     <View style={styles.menuRow}><Ionicons name="location-outline" size={20} color={GREEN} /><Text style={styles.menuText}>Canlı konum paylaşımı yok</Text></View>
     <Pressable onPress={() => open(PRIVACY_URL)} style={styles.menuRow}><Ionicons name="shield-checkmark-outline" size={20} color={GREEN} /><Text style={styles.menuText}>Gizlilik Politikası</Text><Ionicons name="open-outline" size={17} color="#78817D" /></Pressable>
     <Pressable onPress={() => open(TERMS_URL)} style={styles.menuRow}><Ionicons name="document-text-outline" size={20} color={GREEN} /><Text style={styles.menuText}>Kullanım Şartları ve Topluluk Kuralları</Text><Ionicons name="open-outline" size={17} color="#78817D" /></Pressable>
+    <Pressable onPress={() => open(COMMUNITY_STANDARDS_URL)} style={styles.menuRow}><Ionicons name="people-outline" size={20} color={GREEN} /><Text style={styles.menuText}>Topluluk ve içerik standartları</Text><Ionicons name="open-outline" size={17} color="#78817D" /></Pressable>
+    <Pressable onPress={() => open(CHILD_SAFETY_URL)} style={styles.menuRow}><Ionicons name="shield-outline" size={20} color={DANGER} /><Text style={styles.menuText}>Çocuk güvenliği ve bildirim</Text><Ionicons name="open-outline" size={17} color="#78817D" /></Pressable>
     <Pressable onPress={() => open(DELETE_ACCOUNT_URL)} style={styles.menuRow}><Ionicons name="globe-outline" size={20} color={GREEN} /><Text style={styles.menuText}>Web'den hesap silme talebi</Text><Ionicons name="open-outline" size={17} color="#78817D" /></Pressable>
     <Pressable disabled={deleting} onPress={requestDeletion} style={styles.menuRow}><Ionicons name="trash-outline" size={20} color={DANGER} /><Text style={[styles.menuText, { color: DANGER }]}>{deleting ? 'Talep oluşturuluyor…' : 'Hesabımı ve verilerimi sil'}</Text></Pressable>
     <Pressable onPress={logout} style={[styles.menuRow, { marginTop: 10 }]}><Ionicons name="log-out-outline" size={20} color={DANGER} /><Text style={[styles.menuText, { color: DANGER }]}>Çıkış yap</Text></Pressable>
