@@ -1,6 +1,6 @@
 # Can Haritası — Kullanım Şartları ve Topluluk Kuralları
 
-**Şart sürümü:** 2026-09-19
+**Şart sürümü:** 2026-09-13
 
 Can Haritası yalnızca sokak hayvanlarına yardım koordinasyonu amacıyla kullanılır. Uygulamada kullanıcı içeriği yayınlayan veya diğer kullanıcıların içerikleriyle etkileşime geçen herkes bu şartları kabul eder.
 
