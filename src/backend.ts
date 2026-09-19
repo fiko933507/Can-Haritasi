@@ -10,6 +10,10 @@ export const LEGAL_FUNCTION_URL = 'https://br-dry-boat-ayf159cc-legal.compute.c-
 export const PRIVACY_URL = `${LEGAL_FUNCTION_URL}/privacy`;
 export const TERMS_URL = `${LEGAL_FUNCTION_URL}/terms`;
 export const DELETE_ACCOUNT_URL = `${LEGAL_FUNCTION_URL}/delete-account`;
+export const CHILD_SAFETY_URL = `${LEGAL_FUNCTION_URL}/child-safety`;
+export const COMMUNITY_STANDARDS_URL = `${LEGAL_FUNCTION_URL}/community-standards`;
+export const DATA_SAFETY_URL = `${LEGAL_FUNCTION_URL}/data-safety`;
+export const SUPPORT_URL = `${LEGAL_FUNCTION_URL}/support`;
 export const TERMS_VERSION = '2026-09-13';
 
 export const authClient = createAuthClient({
