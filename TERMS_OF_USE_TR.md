@@ -1,6 +1,6 @@
 # Can Haritası — Kullanım Şartları ve Topluluk Kuralları
 
-**Şart sürümü:** 2026-09-13
+**Şart sürümü:** 2026-09-19
 
 Can Haritası yalnızca sokak hayvanlarına yardım koordinasyonu amacıyla kullanılır. Uygulamada kullanıcı içeriği yayınlayan veya diğer kullanıcıların içerikleriyle etkileşime geçen herkes bu şartları kabul eder.
 
@@ -9,7 +9,7 @@ Can Haritası yalnızca sokak hayvanlarına yardım koordinasyonu amacıyla kull
 - Yanlış, uydurma veya yanıltıcı yardım çağrıları; spam ve dolandırıcılık.
 - Tehdit, taciz, nefret, zorbalık veya başka kişilerin kişisel verilerini ifşa etme.
 - Yasadışı faaliyet, hayvana zarar verme, şiddeti teşvik etme veya hayvan istismarını normalleştiren içerik.
-- Cinsel/müstehcen içerik ve çocukların güvenliğini tehlikeye atan içerik.
+- Cinsel/müstehcen içerik; CSAE veya CSAM dahil çocukları istismar eden ya da güvenliğini tehlikeye atan her türlü içerik ve davranış.
 - Kurtarma amacıyla gerekli olmayan aşırı grafik/rahatsız edici görüntüler.
 - Başkasının telif, gizlilik veya diğer haklarını ihlal eden içerik.
 
@@ -37,3 +37,13 @@ Can Bilgisi bölümü bilgilendirme amaçlıdır; veteriner tanısı veya tedavi
 ### Akıllı bildirimlerin kapsamı
 
 Bildirimler gönüllü yardım koordinasyonunu kolaylaştırmak için tasarlanmıştır; her acil olayı veya çağrıyı garanti edilen sürede ileten resmi bir acil durum sistemi değildir. Kullanıcı cihaz izinlerini ve bildirim tercihlerini dilediği zaman değiştirebilir.
+
+
+## Çocuk güvenliği
+
+Can Haritası, CSAE ve CSAM'ye karşı sıfır tolerans uygular. Bir çağrıdaki şüphe **Bildir → Çocuk güvenliği** yoluyla öncelikli moderasyon kuyruğuna iletilmelidir. Şüpheli yasa dışı materyal indirilmemeli, kaydedilmemeli veya yeniden paylaşılmamalıdır.
+
+Yayınlanan standartlar:  
+`https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/child-safety`
+
+İletişim: **fiko3568@gmail.com**
