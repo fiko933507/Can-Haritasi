@@ -73,7 +73,11 @@ Bu paket Google Play politika hazırlıklarıyla güncellenmiştir. Yayın önce
 Yasal sayfalar:
 - Gizlilik: https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/privacy
 - Şartlar: https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/terms
+- Topluluk standartları: https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/community-standards
+- Çocuk güvenliği: https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/child-safety
+- Veri güvenliği özeti: https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/data-safety
 - Hesap silme: https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/delete-account
+- İletişim: https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/support
 
 ## v1.3 — Can Rehberi & Topluluk
 
