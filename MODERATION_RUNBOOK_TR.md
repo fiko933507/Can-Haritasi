@@ -28,3 +28,19 @@ Bildirimler `public.abuse_reports` tablosuna `pending` durumuyla gelir.
 - Tehdit / taciz / kişisel veri ifşası
 - Dolandırıcılık / sahte yardım çağrısı
 - Aşırı grafik veya cinsel içerik
+
+
+## Çocuk güvenliği / CSAE öncelikli akışı
+
+`reason = 'cocuk_guvenligi_csae'` olan bildirimler önceliklidir.
+
+1. Bildirimi ve hedef çağrıyı derhal inceleme sırasının başına al.
+2. Şüpheli yasa dışı materyali gereksiz yere indirme, çoğaltma, ekran görüntüsü alma veya başka kanala taşıma.
+3. İhlal şüphesi doğrulanırsa içeriğin görünürlüğünü kaldır ve ilgili hesabın erişimini sınırla.
+4. Kayıtların bütünlüğünü ve gizliliğini koru; yalnızca yetkili kişiler erişsin.
+5. Geçerli yasa gerektiriyorsa uygun ulusal/bölgesel yetkili mercilere raporla.
+6. İşlem durumunu ve asgari gerekli moderasyon notunu kaydet.
+7. Politika/operasyon soruları için belirlenmiş iletişim: **fiko3568@gmail.com**.
+
+Herkese açık standartlar:  
+`https://br-dry-boat-ayf159cc-legal.compute.c-5.us-east-2.aws.neon.tech/child-safety`
