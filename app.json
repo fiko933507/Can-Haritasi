@@ -3,7 +3,7 @@
     "name": "Can Haritası",
     "slug": "can-haritasi",
     "scheme": "canharitasi",
-    "version": "1.4.2",
+    "version": "1.4.3",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "plugins": [
@@ -47,7 +47,7 @@
         "ACCESS_FINE_LOCATION",
         "CAMERA"
       ],
-      "versionCode": 6,
+      "versionCode": 7,
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ]
