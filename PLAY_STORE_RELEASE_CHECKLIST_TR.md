@@ -1,4 +1,4 @@
-# Can Haritası v1.3.0 — Google Play yayın kontrol listesi
+# Can Haritası v1.4.1 — Google Play yayın kontrol listesi
 
 ## Kod / backend
 
@@ -12,7 +12,9 @@
 - [x] UGC bildir / engelle kullanıcı arayüzü
 - [x] Hesap silme talebi — uygulama içi
 - [x] Hesap silme talebi — harici web sayfası
-- [x] Gizlilik ve Kullanım Şartları — uygulama içinden erişilebilir
+- [x] Gizlilik, Kullanım Şartları, Topluluk Standartları ve Çocuk Güvenliği — uygulama içinden erişilebilir
+- [x] Çocuk güvenliği için ayrı bildirim nedeni ve öncelikli moderasyon kaydı
+- [x] Herkese açık çocuk güvenliği standartları ve iletişim adresi
 - [x] EAS production profili `app-bundle`
 - [x] 1024×1024 uygulama ikonu
 - [x] 1024×500 feature graphic
@@ -38,7 +40,8 @@
 - [ ] Engelle → içerik listeden kaybolmalı
 - [ ] Uygulama içi hesap silme talebi
 - [ ] Web hesap silme formu
-- [ ] Gizlilik/Şartlar bağlantıları
+- [ ] Gizlilik/Şartlar/Topluluk/Çocuk Güvenliği bağlantıları
+- [ ] Bildir → Çocuk güvenliği → abuse_reports kaydı
 - [ ] Soğuk açılış ve yeniden giriş
 - [ ] Akıllı bildirim opt-in testi
 - [ ] Mama / su noktası ekle-yenile testi
@@ -50,6 +53,9 @@
 
 - [ ] Privacy Policy URL gir
 - [ ] Data Safety formunu `DATA_SAFETY_TR.md` ile doldur
+- [ ] Çocuk Güvenliği: standart URL + fiko3568@gmail.com + iki onay
+- [ ] Reklam kimliği: Hayır
+- [ ] UGC bildirme/engelleme/moderasyon mekanizmalarını doğrula
 - [ ] App access: giriş gerekiyorsa inceleme hesabı sağla
 - [ ] Ads: **No**
 - [ ] Target audience: **18 and over**
